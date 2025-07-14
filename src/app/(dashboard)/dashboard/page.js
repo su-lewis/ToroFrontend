@@ -66,7 +66,7 @@ export default function DashboardOverviewPage() {
   };
 
   if (loadingProfile) {
-    return <div className="p-8 text-center text-gray-600 text-lg">Loading dashboard data...</div>;
+    return <div className="p-8 text-center text-gray-600 text-lg">Loading dashboard data... Please wait 10 seconds and refresh</div>;
   }
 
   if (profileError && profileError.status !== 404) { // Show error if not the expected "PROFILE_NOT_FOUND"
