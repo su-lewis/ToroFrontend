@@ -2,28 +2,30 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation'; // useRouter not used in this version but often useful
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-// Content component to use Suspense with useSearchParams
+// Content component to use Suspense with useSearchParams hook
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
-  // const sessionId = searchParams.get('session_id'); // Not displaying it
   const recipientUsername = searchParams.get('recipient');
+  const amountSent = searchParams.get('amount_sent'); // Get the amount intended for the creator
 
-  // Simplified: Assume success if on this page. Webhooks are the source of truth.
-  
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 py-8 bg-gradient-to-br from-green-100 to-emerald-100">
-      <div className="p-6 md:p-10 bg-white rounded-xl shadow-2xl max-w-lg">
+    <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 py-8 bg-gradient-to-br from-green-50 to-emerald-50">
+      <div className="p-6 md:p-10 bg-white rounded-xl shadow-2xl max-w-lg w-full">
         <svg className="w-24 h-24 text-green-500 mb-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
-        <h1 className="text-4xl font-extrabold text-green-600 mb-4">Payment Successful!</h1>
+        <h1 className="text-4xl font-extrabold text-gray-800 mb-4">Payment Successful!</h1>
         <p className="text-xl text-gray-700 mb-8 max-w-md mx-auto">
-          Thank you for your generous support{recipientUsername ? ` to ${recipientUsername}` : ''}! Your contribution is greatly appreciated.
+          Thank you for your generous support
+          {amountSent && ` of $${parseFloat(amountSent).toFixed(2)}`} 
+          {recipientUsername && ` to ${recipientUsername}`}! Your contribution is greatly appreciated.
         </p>
         
+        {/* Removed Transaction ID display */}
+
         <div className="space-y-4 md:space-y-0 md:space-x-4 flex flex-col md:flex-row items-center justify-center">
           {recipientUsername && (
             <Link 
@@ -39,6 +41,7 @@ function PaymentSuccessContent() {
           >
             Go to Homepage
           </Link>
+          {/* Removed "Go to Dashboard" button */}
         </div>
         <p className="text-xs text-gray-500 mt-10">
           You should receive an email receipt from Stripe shortly.
@@ -48,13 +51,12 @@ function PaymentSuccessContent() {
   );
 }
 
-// Wrap with Suspense because useSearchParams() must be used in a Client Component
-// and Suspense is needed for Client Components that use it during initial server render.
+// Wrap with Suspense because useSearchParams() is a client hook
 export default function PaymentSuccessPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen text-lg text-gray-600">
-        <p>Loading success information...</p>
+        <p>Loading payment confirmation...</p>
       </div>
     }>
       <PaymentSuccessContent />
