@@ -25,10 +25,9 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
     setLoading(true); setError(null);
     try {
       const response = await apiClient.post('/stripe/create-checkout-session', {
-        amount: creatorAmountNum, // Send the amount intended FOR THE CREATOR
+        amount: creatorAmountNum,
         recipientUsername: recipientUsername,
       });
-      // ... (Stripe redirect logic remains the same)
       const sessionId = response.data?.id;
       if (!sessionId) throw new Error('No session ID returned from server.');
       const stripe = await stripePromise;
@@ -73,7 +72,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
         <div className="text-sm text-gray-600 text-center mb-5 bg-gray-100 p-3 rounded-lg">
             <p>Creator receives: <span className="font-semibold">${creatorAmountNum.toFixed(2)}</span></p>
             <p className="mt-1">Platform Fee (15%): <span className="font-semibold">${platformFeeNum.toFixed(2)}</span></p>
-            <hr className="my-2"/>
+            <hr className="my-2 border-t border-gray-300"/>
             <p className="font-bold text-lg">Total Charge: ${totalDonorPaysNum.toFixed(2)}</p>
         </div>
       )}
