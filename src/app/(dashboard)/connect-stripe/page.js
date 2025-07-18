@@ -3,23 +3,16 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import apiClient from '@/lib/api';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-// This is the main component logic, wrapped in Suspense below
 function ConnectStripeContent() {
-    const [loading, setLoading]       = useState(true);
-    const [error, setError]           = useState(null);
+    const [loading, setLoading] = useState(true); // Loading for initial status check
+    const [buttonLoading, setButtonLoading] = useState(false); // Loading for the button click
+    const [error, setError] = useState(null);
     const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
-    
-    // Form state for pre-onboarding
-    const [countryCode, setCountryCode] = useState('US');
-    const [phone, setPhone]           = useState('');
-
     const searchParams = useSearchParams();
-    const router = useRouter(); // If you need to programmatically navigate
 
-    // On page load, fetch the user's current Stripe account status
     useEffect(() => {
         const fetchAccountStatus = async () => {
             setLoading(true);
@@ -27,13 +20,10 @@ function ConnectStripeContent() {
             try {
                 const response = await apiClient.get('/stripe/connect/account-status');
                 setStripeAccountStatus(response.data);
-                if (response.data?.accountCountry) {
-                    setCountryCode(response.data.accountCountry);
-                }
             } catch (err) {
-                if (err.response?.status !== 404) {
+                if (err.response?.status !== 404) { // Ignore 404, it means not connected yet
                     console.error("Error fetching Stripe status:", err);
-                    setError(err.response?.data?.message || "Could not retrieve your Stripe account status.");
+                    setError(err.response?.data?.message || "Could not retrieve Stripe account status.");
                 }
             } finally {
                 setLoading(false);
@@ -41,21 +31,18 @@ function ConnectStripeContent() {
         };
         fetchAccountStatus();
         if (searchParams.get('reauth')) {
-            setError("Your previous session expired. Please try connecting again.");
+            setError("Your previous Stripe session expired. Please try connecting again.");
         }
     }, [searchParams]);
 
-    // This function is called when the user submits your pre-onboarding form
-    const handleStartOnboarding = async (e) => {
-        e.preventDefault();
-        setLoading(true);
+    const handleStartOnboarding = async () => {
+        setButtonLoading(true);
         setError(null);
         try {
-            // This POST request sends the collected country/phone to your backend
-            const response = await apiClient.post('/stripe/connect/onboard-user', {
-                countryCode,
-                phone, // Now this is required and will be sent
-            });
+            // POST request now sends an empty body.
+            // The backend will create a country-agnostic account.
+            const response = await apiClient.post('/connect/onboard-user', {});
+            
             if (response.data.url) {
                 window.location.href = response.data.url; // Redirect user to Stripe
             } else {
@@ -63,12 +50,12 @@ function ConnectStripeContent() {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to initiate Stripe connection. Please try again.');
-            setLoading(false);
+            setButtonLoading(false);
         }
     };
 
     if (loading) {
-        return <p className="text-center p-10 text-lg text-gray-600">Loading payment settings...</p>;
+        return <p className="text-center p-10 text-lg text-gray-600">Loading your payment settings...</p>;
     }
     
     // SCENARIO 1: User is fully onboarded and ready to receive payments
@@ -85,72 +72,29 @@ function ConnectStripeContent() {
         );
     }
     
-    // SCENARIO 2: User is not fully onboarded, show the pre-onboarding form
+    // SCENARIO 2: User is not fully onboarded, show the simple "Continue to Stripe" page
     return (
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto">
+        <div className="bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto text-center">
             <h1 className="text-3xl font-bold mb-4 text-gray-800">
                 {stripeAccountStatus?.detailsSubmitted ? 'Complete Your Payout Setup' : 'Connect Stripe to Receive Payments'}
             </h1>
-            <p className="text-gray-600 mb-6">
-                To receive payouts, you'll be redirected to our secure payment partner, Stripe. They will ask for identity and bank information required by financial regulations.
+            <p className="text-gray-600 mb-8">
+                Click the button below to securely connect with our payment partner, Stripe, to set up your payout account.
             </p>
             {error && <p className="text-red-500 mb-4 p-3 bg-red-100 rounded text-sm">{error}</p>}
             
-            {stripeAccountStatus?.detailsSubmitted && !stripeAccountStatus?.payoutsEnabled && (
-                <div className="mb-6 p-4 bg-blue-50 text-blue-800 rounded-md border border-blue-200">
-                    <p className="font-semibold">Almost there!</p>
-                    <p className="text-sm">Your personal details have been submitted to Stripe. The final step is usually to add or verify your bank account for payouts. Click below to continue.</p>
-                </div>
-            )}
-            
-            <form onSubmit={handleStartOnboarding} className="space-y-6">
-                <div>
-                    <label htmlFor="country" className="block text-sm font-medium text-gray-700">Your Country</label>
-                    <select
-                        id="country"
-                        name="country"
-                        value={countryCode}
-                        onChange={(e) => setCountryCode(e.target.value)}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black focus:ring-indigo-500 focus:border-indigo-500"
-                        required
-                        disabled={!!stripeAccountStatus?.accountCountry}
-                    >
-                        <option value="US">United States</option>
-                        <option value="GB">United Kingdom</option>
-                        <option value="CA">Canada</option>
-                        <option value="AU">Australia</option>
-                        <option value="DE">Germany</option>
-                        <option value="FR">France</option>
-                        <option value="ES">Spain</option>
-                        <option value="IT">Italy</option>
-                    </select>
-                </div>
-                <div>
-                    {/* UPDATED: Removed "(Optional)" and added 'required' */}
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number (for verification)</label>
-                    <input
-                        id="phone"
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+1 555 123 4567"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500"
-                        required 
-                    />
-                </div>
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                    {loading ? 'Processing...' : 'Securely Continue to Stripe'}
-                </button>
-            </form>
+            {/* NO FORM - JUST A BUTTON */}
+            <button
+                onClick={handleStartOnboarding}
+                disabled={buttonLoading}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+                {buttonLoading ? 'Redirecting...' : (stripeAccountStatus?.stripeAccountId ? 'Continue Onboarding' : 'Securely Connect with Stripe')}
+            </button>
         </div>
     );
 }
 
-// Wrap with Suspense because useSearchParams() is used
 export default function ConnectStripePageWrapper() {
     return (
         <Suspense fallback={<p className="text-center p-10">Loading...</p>}>
