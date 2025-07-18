@@ -39,23 +39,22 @@ function ConnectStripeContent() {
     }, [searchParams]);
 
     const handleStartOnboarding = async () => {
-        setButtonLoading(true);
-        setError(null);
-        try {
-            // POST request now sends an empty body.
-            // The backend will not look for countryCode or phone.
-            const response = await apiClient.post('/stripe/connect/onboard-user', {});
-            
-            if (response.data.url) {
-                window.location.href = response.data.url; // Redirect user to Stripe
-            } else {
-                throw new Error('Failed to get Stripe onboarding URL from the server.');
-            }
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to initiate Stripe connection. Please try again.');
-            setButtonLoading(false);
+    setButtonLoading(true);
+    setError(null);
+    try {
+        // This is perfect. It sends an empty body.
+        const response = await apiClient.post('/stripe/connect/onboard-user', {});
+        
+        if (response.data.url) {
+            window.location.href = response.data.url; // Redirect user to Stripe
+        } else {
+            throw new Error('Failed to get Stripe onboarding URL from the server.');
         }
-    };
+    } catch (err) {
+        setError(err.response?.data?.message || 'Failed to initiate Stripe connection. Please try again.');
+        setButtonLoading(false);
+    }
+};
 
     if (loading) {
         return <p className="text-center p-10 text-lg text-gray-600">Loading your payment settings...</p>;
