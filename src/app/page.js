@@ -7,9 +7,9 @@ export default function HomePage() {
       <div className="max-w-3xl">
         <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
-            YourLink
+            Tribute
           </span>
-          <span className="dark:text-white text-gray-800"> InBio</span>
+          <span className="dark:text-white text-gray-800"> Toro</span>
         </h1>
         <p className="text-xl text-gray-700 dark:text-gray-300 mb-10">
           Create a personalized page to share all your important links and allow your audience to support you directly.
