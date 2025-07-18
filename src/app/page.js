@@ -30,7 +30,7 @@ export default function HomePage() {
         </div>
       </div>
       <footer className="absolute bottom-8 text-gray-500 dark:text-gray-400 text-sm">
-        Powered by You
+        Powered by Stripe
       </footer>
     </div>
   );

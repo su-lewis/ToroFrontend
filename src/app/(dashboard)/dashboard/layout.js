@@ -58,7 +58,7 @@ export default async function DashboardLayout({ children }) {
       <aside className="w-full md:w-64 bg-white shadow-lg md:min-h-screen p-4 flex flex-col">
         <div>
           <Link href="/dashboard" className="text-3xl font-bold text-blue-600 p-2 block hover:text-blue-700 transition-colors mb-6">
-            My Dashboard
+            Tribute Toro
           </Link>
           <nav className="space-y-1 flex-grow">
             <Link href="/dashboard" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
