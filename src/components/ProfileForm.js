@@ -11,7 +11,9 @@ export default function ProfileForm({ initialData, serverError }) {
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
-  
+   // Add state for the background color
+  const [bgColor, setBgColor] = useState('#FFFFFF');
+
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(null);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState(null);
@@ -40,6 +42,7 @@ export default function ProfileForm({ initialData, serverError }) {
       setBio(initialData.bio || '');
       setCurrentAvatarUrl(initialData.profileImageUrl || null);
       setCurrentBannerUrl(initialData.bannerImageUrl || null);
+      setBgColor(initialData.profileBackgroundColor || '#FFFFFF');
       setIsInitialDataSet(true);
     } else if (!initialData && !serverError && !isInitialDataSet) {
       // New user, initialData might be {} if PROFILE_NOT_FOUND was handled in server component
@@ -156,6 +159,7 @@ export default function ProfileForm({ initialData, serverError }) {
         bio: bio.trim(),
         profileImageUrl: finalAvatarUrl,
         bannerImageUrl: finalBannerUrl,
+        profileBackgroundColor: bgColor,
       };
       // console.log("Submitting profile to backend with payload:", profilePayload);
       // Path is relative to apiClient's baseURL (http://localhost:3001/api)
@@ -168,6 +172,7 @@ export default function ProfileForm({ initialData, serverError }) {
           setBio(response.data.bio || '');
           setCurrentAvatarUrl(response.data.profileImageUrl || null);
           setCurrentBannerUrl(response.data.bannerImageUrl || null);
+          setBgColor(response.data.profileBackgroundColor || '#FFFFFF');
       }
        router.refresh(); // Good practice to refresh Server Components after mutation
     } catch (err) {

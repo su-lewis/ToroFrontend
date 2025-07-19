@@ -65,6 +65,7 @@ export default async function PublicProfilePage({ params, searchParams }) {
   const bio = profileData.bio || "";
   const profileImageUrl = profileData.profileImageUrl;
   const bannerImageUrl = profileData.bannerImageUrl;
+  const bgColor = profileData.profileBackgroundColor || '#F3F4F6';
   
   console.log(`[FRONTEND SERVER - ${username} Page] Attempting to use bannerImageUrl:`, bannerImageUrl);
   
@@ -73,7 +74,9 @@ export default async function PublicProfilePage({ params, searchParams }) {
   const stripeOnboardingComplete = profileData.stripeOnboardingComplete;
 
   return (
-    <div className="container mx-auto max-w-3xl flex flex-col items-center pb-10">
+      // Apply the background color to a new root container div
+  <div style={{ backgroundColor: bgColor, minHeight: '100vh' }}>
+    <div className="container mx-auto max-w-3xl flex flex-col items-center pb-10 pt-4 md:pt-8"></div>
       {/* Banner Image */}
       <div className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg bg-gray-200"> {/* Fallback bg color */}
         {bannerImageUrl ? (
