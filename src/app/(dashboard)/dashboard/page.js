@@ -145,7 +145,7 @@ export default function DashboardOverviewPage() {
         <div className="group p-6 bg-gray-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out">
           <Cog6ToothIcon className="h-10 w-10 text-indigo-500 mb-3" />
           <h2 className="text-xl md:text-2xl font-semibold mb-2 text-gray-700 group-hover:text-indigo-600 transition-colors">Edit Profile</h2>
-          <p className="text-gray-600 mb-4 text-sm md:text-base">Update your personal details.</p>
+          <p className="text-gray-600 mb-4 text-sm md:text-base">Update your profile details.</p>
           <Link href="/dashboard/profile" className="inline-block bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2.5 px-5 rounded-lg text-sm">Go to Profile</Link>
         </div>
         
