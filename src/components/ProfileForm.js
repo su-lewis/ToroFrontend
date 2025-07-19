@@ -1,31 +1,93 @@
 // frontend/src/components/ProfileForm.js
 'use client';
-
-import { useState, useRef, useTransition } from 'react';
+import { useState, useEffect, useRef, useTransition } from 'react';
 import { updateProfile } from '@/app/actions'; // Import the server action
+import { supabase } from '@/lib/supabaseClient'; // Import client-side Supabase for uploads
+import Image from 'next/image';
 
-// This is a Client Component for form interactivity and feedback
 export default function ProfileForm({ profile }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  // useTransition is a React hook for pending states with server actions
   const [isPending, startTransition] = useTransition();
-  const formRef = useRef(null); // To reset the form if needed
 
-  // The form's submit action handler
-  async function handleSubmit(formData) {
-    // The 'formData' object is automatically passed by the form
-    setError('');
-    setSuccess('');
+  // State to hold the final image URLs
+  const [avatarUrl, setAvatarUrl] = useState(profile?.profileImageUrl || null);
+  const [bannerUrl, setBannerUrl] = useState(profile?.bannerImageUrl || null);
+  
+  // State for image previews
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const formRef = useRef(null);
+
+  useEffect(() => {
+    // This helps reset the URLs if the initial profile prop changes.
+    setAvatarUrl(profile?.profileImageUrl || null);
+    setBannerUrl(profile?.bannerImageUrl || null);
+  }, [profile]);
+  
+  const handleFileChange = (e, type) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // ... (Add your file validation for size/type here if you want)
+    const previewUrl = URL.createObjectURL(file);
+    if (type === 'avatar') {
+      setAvatarPreview(previewUrl);
+    } else {
+      setBannerPreview(previewUrl);
+    }
+  };
+
+  async function handleFormSubmit(formData) {
+    setError(''); setSuccess('');
+    setUploading(true); // Show a general loading state for uploads
+
+    const avatarFile = formData.get('avatarFile');
+    const bannerFile = formData.get('bannerFile');
+    
+    let finalAvatarUrl = avatarUrl;
+    let finalBannerUrl = bannerUrl;
+
+    try {
+      // --- Step 1: Handle File Uploads (if any) ---
+      if (avatarFile && avatarFile.size > 0) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData.session.user.id;
+        const filePath = `${userId}/avatar/${Date.now()}_${avatarFile.name}`;
+        const { data, error } = await supabase.storage.from('avatars').upload(filePath, avatarFile);
+        if (error) throw new Error(`Avatar upload failed: ${error.message}`);
+        finalAvatarUrl = supabase.storage.from('avatars').getPublicUrl(data.path).data.publicUrl;
+        setAvatarUrl(finalAvatarUrl); // Update state for UI
+        setAvatarPreview(null); // Clear preview
+      }
+      if (bannerFile && bannerFile.size > 0) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData.session.user.id;
+        const filePath = `${userId}/banner/${Date.now()}_${bannerFile.name}`;
+        const { data, error } = await supabase.storage.from('avatars').upload(filePath, bannerFile);
+        if (error) throw new Error(`Banner upload failed: ${error.message}`);
+        finalBannerUrl = supabase.storage.from('avatars').getPublicUrl(data.path).data.publicUrl;
+        setBannerUrl(finalBannerUrl); // Update state for UI
+        setBannerPreview(null); // Clear preview
+      }
+    } catch (uploadError) {
+      setError(uploadError.message);
+      setUploading(false);
+      return; // Stop if uploads fail
+    }
+    
+    setUploading(false); // Finished uploading
+
+    // --- Step 2: Submit Text Data + New URLs via Server Action ---
+    // We create a new FormData object to pass to the server action
+    const actionFormData = new FormData(formRef.current);
+    actionFormData.set('profileImageUrl', finalAvatarUrl || ''); // Use the new or existing URL
+    actionFormData.set('bannerImageUrl', finalBannerUrl || '');   // Use the new or existing URL
     
     startTransition(async () => {
-      const result = await updateProfile(formData);
-
+      const result = await updateProfile(actionFormData);
       if (result.success) {
         setSuccess(result.message);
-        // Optionally, reset the form after successful submission if fields were uncontrolled
-        // formRef.current?.reset();
-        // Or more likely, you want the form to just show the new defaultValues on next render
       } else {
         setError(result.message);
       }
@@ -33,115 +95,41 @@ export default function ProfileForm({ profile }) {
   }
 
   return (
-    <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
-        {profile && profile.username ? 'Edit Your Profile' : 'Create Your Profile'}
-      </h1>
-      {error && <div className="p-3 mb-4 bg-red-100 text-red-700 rounded-md text-sm">{error}</div>}
-      {success && <div className="p-3 mb-4 bg-green-100 text-green-700 rounded-md text-sm">{success}</div>}
+    <form ref={formRef} action={handleFormSubmit} className="space-y-8 ...">
+      {/* ... (success/error messages) ... */}
       
-      {/* The `action` prop on the form directly calls the server action */}
-      <form ref={formRef} action={handleSubmit} className="space-y-8">
-        
-        {/* NOTE ON IMAGE UPLOADS with Server Actions:
-            Direct file uploads with server actions require a more advanced setup.
-            For now, these fields will save a URL that you paste in.
-            We can add a separate upload component later. */}
-
-        <div>
-            <label htmlFor="bannerImageUrl" className="block text-sm font-medium text-gray-700">Banner Image URL</label>
-            <input
-                type="url"
-                name="bannerImageUrl"
-                id="bannerImageUrl"
-                defaultValue={profile?.bannerImageUrl || ''}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black"
-                placeholder="https://your-image-host.com/banner.png"
-            />
+      {/* Banner Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Banner Image</label>
+        <div className="w-full h-48 rounded-lg bg-gray-200 relative ...">
+          {(bannerPreview || bannerUrl) && <Image src={bannerPreview || bannerUrl} alt="Banner Preview" layout="fill" className="object-cover rounded-lg" />}
+          <input type="file" name="bannerFile" onChange={(e) => handleFileChange(e, 'banner')} accept="image/*" className="..." />
+          {/* You'd style the input or use a button to trigger it */}
         </div>
+      </div>
 
-        <div>
-            <label htmlFor="profileImageUrl" className="block text-sm font-medium text-gray-700">Profile Image URL</label>
-            <input
-                type="url"
-                name="profileImageUrl"
-                id="profileImageUrl"
-                defaultValue={profile?.profileImageUrl || ''}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black"
-                placeholder="https://your-image-host.com/avatar.png"
-            />
-        </div>
+      {/* Avatar Upload */}
+      <div className="flex flex-col items-center space-y-4">
+        {(avatarPreview || avatarUrl) ? (
+          <Image src={avatarPreview || avatarUrl} alt="Avatar Preview" width={128} height={128} className="..." />
+        ) : ( <div className="w-32 h-32 rounded-full bg-gray-200 ...">?</div> )}
+        <input type="file" name="avatarFile" onChange={(e) => handleFileChange(e, 'avatar')} accept="image/*" className="..." />
+      </div>
 
-        <div className="space-y-6">
-          <div>
-            <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700">Profile Background Color</label>
-            <div className="mt-1 flex items-center gap-4">
-              <input
-                type="color"
-                name="profileBackgroundColor"
-                id="bgColor"
-                defaultValue={profile?.profileBackgroundColor || '#FFFFFF'}
-                className="w-12 h-10 p-1 border border-gray-300 rounded-md cursor-pointer"
-              />
-              {/* This text input allows users to paste a hex code directly */}
-              <input
-                type="text"
-                name="profileBackgroundColorInput" // Use a different name to avoid conflict, or handle state
-                defaultValue={profile?.profileBackgroundColor || '#FFFFFF'}
-                onChange={(e) => {
-                  // This requires state to sync the color picker and text input
-                  // For a simple server action form, it's often better to have one or the other
-                  // Or just rely on the color picker's `name` attribute.
-                }}
-                placeholder="#FFFFFF"
-                className="flex-grow px-3 py-2 border border-gray-300 rounded-md text-black"
-              />
-            </div>
-          </div>
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
-            <input
-                type="text"
-                name="username"
-                id="username"
-                defaultValue={profile?.username || ''}
-                required
-                minLength="3"
-                maxLength="20"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black"
-            />
-          </div>
-          <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label>
-            <input
-                type="text"
-                name="displayName"
-                id="displayName"
-                defaultValue={profile?.displayName || ''}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black"
-            />
-          </div>
-          <div>
-            <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
-            <textarea
-                name="bio"
-                id="bio"
-                rows="4"
-                defaultValue={profile?.bio || ''}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black"
-                placeholder="A little about yourself..."
-            ></textarea>
-          </div>
-        </div>
+      {/* ... (inputs for color, username, displayName, bio using `defaultValue` and `name`) ... */}
+      <div>
+        <label htmlFor="bgColor">Profile Background Color</label>
+        <input type="color" name="profileBackgroundColor" id="bgColor" defaultValue={profile?.profileBackgroundColor || '#FFFFFF'} />
+      </div>
+      <div>
+        <label htmlFor="username">Username</label>
+        <input type="text" name="username" id="username" defaultValue={profile?.username || ''} required />
+      </div>
+      {/* ... etc for displayName and bio ... */}
 
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70"
-        >
-          {isPending ? 'Saving...' : 'Save Profile'}
-        </button>
-      </form>
-    </div>
+      <button type="submit" disabled={isPending || uploading} className="...">
+        {isPending || uploading ? 'Saving...' : 'Save Profile'}
+      </button>
+    </form>
   );
 }
