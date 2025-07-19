@@ -60,10 +60,10 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
       <h3 className="text-2xl font-semibold mb-1 text-gray-800 text-center">
-        Support {recipientDisplayName || recipientUsername}!
+        Send to {recipientDisplayName || recipientUsername}!
       </h3>
       <p className="text-xs text-gray-500 text-center mb-4">
-        Enter the amount you want them to receive.
+        Enter amount you want them to receive.
       </p>
       {error && <p className="text-red-600 text-sm mb-4 p-3 bg-red-100 rounded-md text-center">{error}</p>}
       
