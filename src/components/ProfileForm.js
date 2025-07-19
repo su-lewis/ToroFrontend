@@ -214,7 +214,7 @@ export default function ProfileForm({ initialData, serverError }) {
           <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
           {displayBanner ? (
             <div className="w-full aspect-[3/1] relative rounded-lg overflow-hidden border border-gray-300 bg-gray-100">
-              <Image src={displayBanner} alt="Banner Preview" layout="fill" objectFit="cover" key={displayBanner} />
+              <Image src={displayBanner} alt="Banner Preview" fill={true} className="object-cover" key={displayBanner} />
             </div>
           ) : (
             <div className="w-full aspect-[3/1] bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 border border-dashed border-gray-300">
@@ -239,10 +239,32 @@ export default function ProfileForm({ initialData, serverError }) {
           </button>
         </div>
 
-        {/* Text Fields */}
-        <div><label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label><input type="text" id="username" value={username} onChange={(e) => setUsername(e.target.value)} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" /></div>
-        <div><label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label><input type="text" id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" /></div>
-        <div><label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label><textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea></div>
+        {/* Text Fields and Color Picker */}
+        <div className="space-y-6">
+            <div><label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label><input type="text" id="username" value={username} onChange={(e) => setUsername(e.target.value)} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" /></div>
+            <div><label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label><input type="text" id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" /></div>
+            <div><label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label><textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea></div>
+        
+            {/* FIX: Add the color picker section here */}
+            <div>
+              <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700">Profile Background Color</label>
+              <div className="mt-1 flex items-center gap-4">
+                <input 
+                  type="color" 
+                  id="bgColor" 
+                  value={bgColor}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="w-14 h-10 p-1 border border-gray-300 rounded-md cursor-pointer"
+                />
+                <input 
+                  type="text"
+                  value={bgColor}
+                  readOnly
+                  className="w-28 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-600 bg-gray-50 focus:ring-0 focus:border-gray-300"
+                />
+              </div>
+            </div>
+        </div>
         
         <button type="submit" disabled={formLoading || uploadingAvatar || uploadingBanner} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70">
           {formLoading ? 'Saving Profile...' : 'Save Profile'}
