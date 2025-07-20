@@ -48,8 +48,10 @@ export default async function PublicProfilePage({ params, searchParams }) {
   return (
     // FIX: Apply background color to a <main> element that WRAPS the page content.
     // This is the new root element for the page.
-    <main style={{ backgroundColor: profileBackgroundColor, minHeight: '100vh' }} className="flex flex-col items-center">
-      
+    <main
+  style={{ backgroundColor: profileBackgroundColor, minHeight: '100vh' }}
+  className="flex flex-col items-center no-overscroll"
+>
       {/* Container for the entire profile card content */}
       <div className="container mx-auto max-w-3xl flex flex-col items-center pb-10 w-full">
         
