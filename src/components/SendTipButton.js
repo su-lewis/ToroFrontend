@@ -8,33 +8,34 @@ import { loadStripe } from '@stripe/stripe-js';
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function SendTipButton({ recipientUsername, recipientDisplayName }) {
-  const [amount, setAmount] = useState('10'); // Let's use a common default like 10
+  const [amount, setAmount] = useState('10');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const platformFeePercentage = 0.15; // 15% - This MUST match your backend's percentage
 
-  // CORRECTED "GROSS-UP" CALCULATION
+  // --- CALCULATION CHANGE IS HERE ---
+  // Simple Add-On calculation
   const calculateTotalDonorPays = (creatorAmount) => {
     if (isNaN(creatorAmount) || creatorAmount <= 0) return 0;
-    // GrossAmount = CreatorAmount / (1 - PlatformFeePercentage)
-    return creatorAmount / (1 - platformFeePercentage);
+    // Total = CreatorAmount + (CreatorAmount * FeeRate)
+    return creatorAmount + (creatorAmount * platformFeePercentage);
   };
+  // --- END CALCULATION CHANGE ---
 
   const creatorAmountNum = parseFloat(amount);
   const totalDonorPaysNum = calculateTotalDonorPays(creatorAmountNum);
+  const platformFeeNum = totalDonorPaysNum - creatorAmountNum;
 
   const handleTip = async () => {
     if (!recipientUsername) { setError("Recipient information is missing."); return; }
-    if (isNaN(creatorAmountNum) || creatorAmountNum < 1.00) { // Check the amount FOR THE CREATOR
+    if (isNaN(creatorAmountNum) || creatorAmountNum < 1.00) {
       setError("Please enter a valid amount for the creator (min $1.00).");
       return;
     }
 
     setLoading(true); setError(null);
     try {
-      // Send the amount intended FOR THE CREATOR to the backend.
-      // The backend will perform the same gross-up calculation.
       const response = await apiClient.post('/stripe/create-checkout-session', {
         amount: creatorAmountNum,
         recipientUsername: recipientUsername,
@@ -44,7 +45,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       if (!sessionId) throw new Error('Failed to get session ID from backend.');
       
       const stripe = await stripePromise;
-      if (!stripe) throw new Error('Stripe.js failed to load.');
+      if (!stripe) throw new Error('Stripe.js has not loaded yet.');
 
       const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
       if (stripeError) {
@@ -60,10 +61,10 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
       <h3 className="text-2xl font-semibold mb-1 text-gray-800 text-center">
-        Send to {recipientDisplayName || recipientUsername}!
+        Support {recipientDisplayName || recipientUsername}!
       </h3>
       <p className="text-xs text-gray-500 text-center mb-4">
-        Enter amount you want them to receive.
+        Enter the amount you want them to receive.
       </p>
       {error && <p className="text-red-600 text-sm mb-4 p-3 bg-red-100 rounded-md text-center">{error}</p>}
       
@@ -84,20 +85,17 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
         />
       </div>
       
-      {/* This UI now uses the correct calculation and will match the backend */}
+      {/* UI now uses the simple add-on calculation */}
       {creatorAmountNum > 0 && (
         <div className="text-xs text-gray-600 text-center mb-4 p-2 bg-gray-100 rounded-md">
             <p>
-                {recipientDisplayName || recipientUsername} receives: <span className="font-semibold">${creatorAmountNum.toFixed(2)}</span>
+                Gift to {recipientDisplayName || recipientUsername}: <span className="font-semibold">${creatorAmountNum.toFixed(2)}</span>
             </p>
             <p className="mt-1">
-                Platform Fee (15%): <span className="font-semibold">${(totalDonorPaysNum - creatorAmountNum).toFixed(2)}</span>
+                Platform Fee (15%): <span className="font-semibold">+ ${platformFeeNum.toFixed(2)}</span>
             </p>
             <p className="font-bold text-sm mt-2">
                 Total You Pay: <span className="font-semibold">${totalDonorPaysNum.toFixed(2)}</span>
-            </p>
-            <p className="text-[10px] text-gray-500 mt-1">
-                (Stripe's processing fees are handled separately)
             </p>
         </div>
       )}
@@ -107,7 +105,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
         disabled={loading || isNaN(creatorAmountNum) || creatorAmountNum < 1.00}
         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3.5 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
       >
-        {loading ? 'Processing...' : `Tip $${creatorAmountNum > 0 ? creatorAmountNum.toFixed(2) : '...'}`}
+        {loading ? 'Processing...' : `Pay $${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}
       </button>
       <p className="text-xs text-gray-500 mt-3 text-center">Powered by Stripe</p>
     </div>
