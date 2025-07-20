@@ -46,25 +46,22 @@ export default async function PublicProfilePage({ params, searchParams }) {
   } = profileData;
 
   return (
-    // FIX: Apply background color to a <main> element that WRAPS the page content.
-    // This is the new root element for the page.
-    <main style={{ backgroundColor: profileBackgroundColor, minHeight: '100vh' }} className="flex flex-col items-center">
+    // FIX: Removed the `bg-gray-100` class. The background will now be determined by your global CSS.
+    <main className="flex flex-col items-center min-h-screen">
       
       {/* Container for the entire profile card content */}
       <div className="container mx-auto max-w-3xl flex flex-col items-center pb-10 w-full">
         
         {/* Banner Image */}
-        {/* FIX: Added `relative` to the container, which is required for `layout="fill"`. */}
-        {/* The `object-cover` class (equivalent to objectFit="cover") prevents stretching. */}
         <div className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg bg-gray-300">
           {bannerImageUrl ? (
             <Image
               src={bannerImageUrl}
               alt={`${displayName}'s banner`}
               fill={true}
-              className="object-cover" // Use object-cover to crop, not stretch
+              className="object-cover"
               priority={true}
-              sizes="(max-width: 768px) 100vw, 896px" // Max width is max-w-3xl (896px)
+              sizes="(max-width: 768px) 100vw, 896px"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-r from-gray-300 to-gray-400" />
@@ -72,7 +69,11 @@ export default async function PublicProfilePage({ params, searchParams }) {
         </div>
 
         {/* Profile content area */}
-        <div className="w-full max-w-2xl bg-white p-6 md:p-8 shadow-xl relative z-10 -mt-12 md:-mt-16 rounded-lg mx-4 sm:mx-0">
+        {/* The custom background color is applied to this container. */}
+        <div
+          style={{ backgroundColor: profileBackgroundColor }}
+          className="w-full max-w-2xl p-6 md:p-8 shadow-xl relative z-10 -mt-12 md:-mt-16 rounded-lg mx-4 sm:mx-0"
+        >
           {/* Profile Image - Centered */}
           <div className="flex justify-center -mt-20 md:-mt-24 mb-4">
             {profileImageUrl ? (
