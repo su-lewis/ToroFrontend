@@ -10,26 +10,8 @@ import {
   ArrowRightOnRectangleIcon,
   UserCircleIcon
 } from '@heroicons/react/24/outline';
-import { fetchProtectedDataFromServer } from '@/lib/server-api'; // Your server-side fetch helper
-
-// Server Action for logout
-async function handleLogoutAction() {
-  'use server';
-  const cookieStore = cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) { return cookieStore.get(name)?.value; },
-        set(name, value, options) { try { cookieStore.set({ name, value, ...options }); } catch (error) {} },
-        remove(name, options) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) {} },
-      },
-    }
-  );
-  await supabase.auth.signOut();
-  redirect('/login');
-}
+import { fetchProtectedDataFromServer } from '@/lib/server-api';
+import { handleLogout } from '@/app/actions'; // Import the Server Action
 
 export default async function DashboardLayout({ children }) {
   const cookieStore = cookies();
@@ -56,7 +38,7 @@ export default async function DashboardLayout({ children }) {
   try {
     userProfile = await fetchProtectedDataFromServer('/users/me');
   } catch (error) {
-    if (error.status !== 404) { // 404 is okay for new users
+    if (error.status !== 404) { // 404 is okay for new users who haven't created a profile yet
         console.error("DashboardLayout: Error fetching user profile:", error.message);
     }
   }
@@ -77,35 +59,32 @@ export default async function DashboardLayout({ children }) {
         </div>
         <nav className="space-y-1 flex-grow">
           <Link href="/dashboard" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
-            <UserCircleIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" /> 
+            <UserCircleIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-600" /> 
             <span className="font-medium">Overview</span>
           </Link>
           <Link href="/dashboard/profile" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
-            <Cog6ToothIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" /> 
+            <Cog6ToothIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-600" /> 
             <span className="font-medium">Profile Settings</span>
           </Link>
           <Link href="/dashboard/links" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
-            <LinkIconOutline className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" /> 
+            <LinkIconOutline className="h-5 w-5 text-gray-500 group-hover:text-blue-600" /> 
             <span className="font-medium">Manage Links</span>
           </Link>
-          
-          {/* --- UNIFIED "PAYMENTS" LINK --- */}
           <Link 
-            href={paymentsLinkUrl} // <-- Use the conditionally set URL
+            href={paymentsLinkUrl}
             className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors"
           >
             <ChartBarIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-600" />
             <span className="font-medium">Payments</span>
           </Link>
-
         </nav>
         <div className="mt-auto pt-6 border-t border-gray-200">
-          <form action={handleLogoutAction}>
+          <form action={handleLogout}>
             <button 
               type="submit" 
               className="group flex items-center space-x-3 w-full px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
             >
-              <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 group-hover:text-red-600 transition-colors" /> 
+              <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 group-hover:text-red-600" /> 
               <span className="font-medium">Log Out</span>
             </button>
           </form>
