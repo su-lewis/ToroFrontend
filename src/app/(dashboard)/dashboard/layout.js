@@ -8,9 +8,9 @@ import {
   LinkIcon as LinkIconOutline,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
-  CreditCardIcon,
   UserCircleIcon
 } from '@heroicons/react/24/outline';
+import { fetchProtectedDataFromServer } from '@/lib/server-api'; // Your server-side fetch helper
 
 // Server Action for logout
 async function handleLogoutAction() {
@@ -23,7 +23,7 @@ async function handleLogoutAction() {
       cookies: {
         get(name) { return cookieStore.get(name)?.value; },
         set(name, value, options) { try { cookieStore.set({ name, value, ...options }); } catch (error) {} },
-        remove(name, options) { try { cookieStore.set({ name, value, '', ...options }); } catch (error) {} },
+        remove(name, options) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) {} },
       },
     }
   );
@@ -45,16 +45,30 @@ export default async function DashboardLayout({ children }) {
     }
   );
 
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (sessionError || !session) {
-    console.log("DashboardLayout: No session found or error, redirecting to login.");
+  if (!session) {
     redirect('/login');
   }
 
+  // Fetch the user's application-specific profile data server-side
+  let userProfile = null;
+  try {
+    userProfile = await fetchProtectedDataFromServer('/users/me');
+  } catch (error) {
+    if (error.status !== 404) { // 404 is okay for new users
+        console.error("DashboardLayout: Error fetching user profile:", error.message);
+    }
+  }
+  
+  // Determine if Stripe is fully set up
+  const isStripeOnboarded = userProfile?.stripeOnboardingComplete === true;
+  
+  // Conditionally set the URL for the single "Payments" link
+  const paymentsLinkUrl = isStripeOnboarded ? '/dashboard/payments' : '/connect-stripe';
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-100 text-gray-800">
-      {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 bg-white shadow-lg md:min-h-screen p-4 flex flex-col">
         <div className="mb-8">
           <Link href="/dashboard" className="text-3xl font-bold text-blue-600 p-2 block hover:text-blue-700 transition-colors">
@@ -75,24 +89,13 @@ export default async function DashboardLayout({ children }) {
             <span className="font-medium">Manage Links</span>
           </Link>
           
-          {/* --- UPDATED PAYMENTS SECTION --- */}
-          
-          {/* Link to the Payments Dashboard (Stats & History) */}
+          {/* --- UNIFIED "PAYMENTS" LINK --- */}
           <Link 
-            href="/dashboard/payments"
+            href={paymentsLinkUrl} // <-- Use the conditionally set URL
             className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors"
           >
-            <ChartBarIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
-            <span className="font-medium">Payment Analytics</span>
-          </Link>
-
-          {/* Link to the Stripe Onboarding/Settings Page */}
-          <Link 
-            href="/connect-stripe" 
-            className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors"
-          >
-            <CreditCardIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
-            <span className="font-medium">Payouts Setup</span>
+            <ChartBarIcon className="h-5 w-5 text-gray-500 group-hover:text-blue-600" />
+            <span className="font-medium">Payments</span>
           </Link>
 
         </nav>
@@ -106,15 +109,9 @@ export default async function DashboardLayout({ children }) {
               <span className="font-medium">Log Out</span>
             </button>
           </form>
-           {session?.user?.email && (
-            <p className="text-xs text-gray-500 mt-3 p-2 text-center break-all">
-              {session.user.email}
-            </p>
-           )}
+           {session?.user?.email && ( <p className="text-xs text-gray-500 mt-3 p-2 text-center break-all">{session.user.email}</p> )}
         </div>
       </aside>
-
-      {/* Main Content Area */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
         {children}
       </main>
