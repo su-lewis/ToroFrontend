@@ -55,4 +55,17 @@ export async function handleLogout() {
     {
       cookies: {
         get(name) { return cookieStore.get(name)?.value; },
-        set
+        set(name, value, options) { try { cookieStore.set({ name, value, ...options }); } catch (error) {} },
+        remove(name, options) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) {} },
+      },
+    }
+  );
+  
+  await supabase.auth.signOut();
+  
+  // Revalidate the root layout to ensure user-specific data is cleared server-side
+  revalidatePath('/', 'layout'); 
+  
+  // Redirect to the login page
+  redirect('/login');
+}
