@@ -38,7 +38,8 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       const response = await apiClient.post('/stripe/create-checkout-session', {
         amount: creatorAmountNum,
         recipientUsername: recipientUsername,
-        donorName: donorName.trim(),
+        // If donorName is empty, send 'Anonymous', otherwise send the trimmed name
+        donorName: donorName.trim() === '' ? 'Anonymous' : donorName.trim(),
       });
       
       const sessionId = response.data?.id;
@@ -59,17 +60,15 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   };
 
   return (
-    <div className="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200 space-y-4">
-      <h3 className="text-xl font-bold text-gray-800 text-center">
+    <div className="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200">
+      <h3 className="text-xl font-bold mb-4 text-gray-800 text-center">
         Send a Tip to {recipientDisplayName || recipientUsername}
       </h3>
       
-      {error && <p className="text-red-600 text-sm p-2 bg-red-100 rounded-md text-center">{error}</p>}
+      {error && <p className="text-red-600 text-sm mb-4 p-2 bg-red-100 rounded-md text-center">{error}</p>}
       
-      {/* --- REVISED INPUT SECTION - STACKED VERTICALLY --- */}
-      
-      {/* Amount Input */}
-      <div className="flex items-center justify-center space-x-2">
+      {/* Amount Input Section */}
+      <div className="flex items-center justify-center space-x-2 mb-4">
         <span className="text-2xl font-medium text-gray-700">$</span>
         <input
           type="text"
@@ -85,22 +84,10 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
           placeholder={MINIMUM_TIP_AMOUNT.toFixed(2)}
         />
       </div>
-
-      {/* Name Input (Full width, bigger text, max 18 chars) */}
-      <div>
-        <input
-          type="text"
-          value={donorName}
-          onChange={(e) => setDonorName(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-lg text-black shadow-sm text-center" // <-- text-lg for bigger text
-          placeholder="Your name (optional)"
-          maxLength="18" // <-- Max 18 characters
-        />
-      </div>
       
-      {/* Simplified Fee Breakdown */}
+      {/* Simplified Fee Breakdown Section */}
       {creatorAmountNum > 0 && (
-        <div className="text-sm text-gray-600 text-center border-t border-b border-gray-200 py-3">
+        <div className="text-sm text-gray-600 text-center mb-4 border-t border-b border-gray-200 py-3">
             <div className="flex justify-between items-center px-2">
                 <span>Platform & Stripe Fee:</span>
                 <span className="font-semibold">+ ${platformFeeNum.toFixed(2)}</span>
@@ -111,6 +98,20 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
             </div>
         </div>
       )}
+
+      {/* --- REVISED NAME FIELD SECTION (Positioned above Pay button) --- */}
+      <div className="mb-4 flex flex-col items-center">
+        <label htmlFor="donorName" className="text-sm text-gray-600 mb-2">Your Name (optional)</label>
+        <input
+          id="donorName"
+          type="text"
+          value={donorName}
+          onChange={(e) => setDonorName(e.target.value)}
+          placeholder="Anonymous"
+          maxLength="18"
+          className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-lg text-black shadow-sm text-center"
+        />
+      </div>
 
       <button
         onClick={handleTip}
