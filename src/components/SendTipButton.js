@@ -16,7 +16,6 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
 
   const platformFeePercentage = 0.15;
 
-  // Calculation for the simple "add-on" fee model
   const calculateTotalDonorPays = (creatorAmount) => {
     if (isNaN(creatorAmount) || creatorAmount <= 0) return { total: 0, fee: 0 };
     const fee = creatorAmount * platformFeePercentage;
@@ -59,7 +58,6 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   };
 
   return (
-    // Main container is now more compact
     <div className="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200">
       <h3 className="text-xl font-bold mb-4 text-gray-800 text-center">
         Send a Tip to {recipientDisplayName || recipientUsername}
@@ -67,7 +65,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       
       {error && <p className="text-red-600 text-sm mb-4 p-2 bg-red-100 rounded-md text-center">{error}</p>}
       
-           {/* --- REVISED INPUT SECTION --- */}
+      {/* --- REVISED INPUT SECTION --- */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
         
         {/* Name Input (shorter box, bigger text, max 18 chars) */}
@@ -82,30 +80,29 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
             />
         </div>
 
-
-      <div className="flex items-center justify-center space-x-2 mb-4">
-        <span className="text-2xl font-medium text-gray-700">$</span>
-        <input
-          type="text"
-          value={amount}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) {
-                setAmount(val);
-            }
-          }}
-          min={MINIMUM_TIP_AMOUNT.toFixed(2)}
-          className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-center text-2xl font-semibold text-black shadow-sm"
-          placeholder={MINIMUM_TIP_AMOUNT.toFixed(2)}
-        />
+        {/* Amount Input */}
+        <div className="flex items-center space-x-2 w-full sm:w-1/2 justify-center">
+            <span className="text-2xl font-medium text-gray-700">$</span>
+            <input
+              type="text"
+              value={amount}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) {
+                    setAmount(val);
+                }
+              }}
+              min={MINIMUM_TIP_AMOUNT.toFixed(2)}
+              className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-center text-2xl font-semibold text-black shadow-sm"
+              placeholder={MINIMUM_TIP_AMOUNT.toFixed(2)}
+            />
+        </div>
       </div>
       
       {/* Simplified Fee Breakdown */}
       {creatorAmountNum > 0 && (
         <div className="text-sm text-gray-600 text-center mb-5 border-t border-b border-gray-200 py-3">
-            {/* "Gift to..." line is REMOVED */}
             <div className="flex justify-between items-center px-2">
-                {/* "Platform Fee" text is CHANGED, and percentage is REMOVED */}
                 <span>Platform & Stripe Fee:</span>
                 <span className="font-semibold">+ ${platformFeeNum.toFixed(2)}</span>
             </div>
