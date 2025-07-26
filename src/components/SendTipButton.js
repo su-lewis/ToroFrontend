@@ -67,18 +67,21 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       
       {error && <p className="text-red-600 text-sm mb-4 p-2 bg-red-100 rounded-md text-center">{error}</p>}
       
-      {/* Input section */}
+           {/* --- REVISED INPUT SECTION --- */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+        
+        {/* Name Input (shorter box, bigger text, max 18 chars) */}
+        <div className="w-full sm:w-1/2">
+            <input
+              type="text"
+              value={donorName}
+              onChange={(e) => setDonorName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-lg text-black shadow-sm text-center"
+              placeholder="Your name (optional)"
+              maxLength="18" // <-- Max 18 characters
+            />
+        </div>
 
-            <div className="mb-4">
-         <input
-           type="text"
-           value={donorName}
-           onChange={(e) => setDonorName(e.target.value)}
-           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black shadow-sm"
-           placeholder="Your name (optional, leave blank for anonymous)"
-           maxLength="100"
-         />
-      </div>
 
       <div className="flex items-center justify-center space-x-2 mb-4">
         <span className="text-2xl font-medium text-gray-700">$</span>
