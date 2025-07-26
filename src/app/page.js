@@ -1,7 +1,29 @@
 // frontend/src/app/page.js
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) { return cookieStore.get(name)?.value; },
+      },
+    }
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // If a session exists, the user is logged in. Redirect to the dashboard.
+  if (session) {
+    redirect('/dashboard');
+  }
+
+  // If no session, show the public landing page content.
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
       <div className="max-w-3xl">
@@ -9,7 +31,7 @@ export default function HomePage() {
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
             Tribute
           </span>
-          <span className="dark:text-white text-gray-800"> Toro</span>
+          <span className="dark:text-white text-gray-800">Toro</span>
         </h1>
         <p className="text-xl text-gray-700 dark:text-gray-300 mb-10">
           Create a personalized page to share all your important links and allow your audience to support you directly.
