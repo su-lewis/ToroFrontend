@@ -101,7 +101,6 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
 
       {/* --- REVISED NAME FIELD SECTION (Positioned above Pay button) --- */}
       <div className="mb-4 flex flex-col items-center">
-        <label htmlFor="donorName" className="text-sm text-gray-600 mb-2">Your Name (optional)</label>
         <input
           id="donorName"
           type="text"
