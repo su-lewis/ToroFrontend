@@ -1,275 +1,153 @@
 // frontend/src/components/ProfileForm.js
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import apiClient from '@/lib/api'; // Your client-side Axios API helper
-import { supabase } from '@/lib/supabaseClient'; // For storage uploads
+import { useState, useEffect, useRef, useTransition } from 'react';
+import { updateProfile } from '@/app/actions'; // Import the server action
+import { supabase } from '@/lib/supabaseClient'; // Import client-side Supabase FOR UPLOADS ONLY
 import Image from 'next/image';
-import { useRouter } from 'next/navigation'; // If needed
 
 export default function ProfileForm({ initialData, serverError }) {
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
-   // Add state for the background color
-  const [bgColor, setBgColor] = useState('#FFFFFF');
+  // State for Server Action feedback and pending status
+  const [error, setError] = useState(serverError?.message || '');
+  const [success, setSuccess] = useState('');
+  const [isPending, startTransition] = useTransition();
 
-  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(null);
-  const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
-  const [previewAvatarUrl, setPreviewAvatarUrl] = useState(null);
-  const avatarFileInputRef = useRef(null);
-
-  const [currentBannerUrl, setCurrentBannerUrl] = useState(null);
-  const [selectedBannerFile, setSelectedBannerFile] = useState(null);
-  const [previewBannerUrl, setPreviewBannerUrl] = useState(null);
-  const bannerFileInputRef = useRef(null);
+  // State for client-side operations (like file uploads)
+  const [uploading, setUploading] = useState(false);
   
-  const [isInitialDataSet, setIsInitialDataSet] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const [formSuccess, setFormSuccess] = useState(null);
-  const router = useRouter();
+  // These states hold the FINAL URLs that will be submitted
+  const [avatarUrl, setAvatarUrl] = useState(initialData?.profileImageUrl || null);
+  const [bannerUrl, setBannerUrl] = useState(initialData?.bannerImageUrl || null);
+  
+  // These states hold temporary previews for selected files
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+  const formRef = useRef(null); // Ref to access the form element
 
-  useEffect(() => {
-    if (serverError && serverError.status !== 404 && serverError.code !== 'PROFILE_NOT_FOUND') {
-      setFormError(`Error loading profile: ${serverError.message || serverError.bodyText || "Server error"}`);
-    }
-    if (initialData && !isInitialDataSet) {
-      setUsername(initialData.username || '');
-      setDisplayName(initialData.displayName || '');
-      setBio(initialData.bio || '');
-      setCurrentAvatarUrl(initialData.profileImageUrl || null);
-      setCurrentBannerUrl(initialData.bannerImageUrl || null);
-      setBgColor(initialData.profileBackgroundColor || '#FFFFFF');
-      setIsInitialDataSet(true);
-    } else if (!initialData && !serverError && !isInitialDataSet) {
-      // New user, initialData might be {} if PROFILE_NOT_FOUND was handled in server component
-      setIsInitialDataSet(true); 
-    }
-  }, [initialData, serverError, isInitialDataSet]);
-
-  const handleFileChange = (event, type) => {
-    const file = event.target.files?.[0];
-    let errorSetter = setFormError; 
-    let fileSetter, previewSetter, inputRef;
-
-    if (type === 'avatar') {
-      fileSetter = setSelectedAvatarFile;
-      previewSetter = setPreviewAvatarUrl;
-      inputRef = avatarFileInputRef;
-    } else { // banner
-      fileSetter = setSelectedBannerFile;
-      previewSetter = setPreviewBannerUrl;
-      inputRef = bannerFileInputRef;
-    }
-
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        errorSetter(`${type === 'avatar' ? 'Avatar' : 'Banner'} is too large. Max 5MB.`);
-        fileSetter(null); previewSetter(null); if (inputRef.current) inputRef.current.value = ""; return;
-      }
-      if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
-        errorSetter(`Invalid file type for ${type}. Use JPG, PNG, GIF, WEBP.`);
-        fileSetter(null); previewSetter(null); if (inputRef.current) inputRef.current.value = ""; return;
-      }
-      fileSetter(file);
-      previewSetter(URL.createObjectURL(file)); // Create a temporary local URL for preview
-      setFormError(null); 
-    } else {
-      fileSetter(null);
-      previewSetter(null);
-    }
-  };
-
-  const uploadFileToSupabase = async (file, userId, fileType) => {
-    if (!file) return null;
-    if (fileType === 'avatar') setUploadingAvatar(true);
-    if (fileType === 'banner') setUploadingBanner(true);
-
-    // Path structure: avatars/USER_ID/avatarORbanner/timestamp_filename.ext
-    const fileName = `${userId}/${fileType}/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+  const handleFileChange = (e, type) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError("File is too large. Max 5MB."); return; }
+    if (!file.type.startsWith('image/')) { setError("Invalid file type. Please select an image."); return; }
     
-    try {
-      console.log(`Uploading ${fileType} to Supabase Storage: avatars/${fileName}`);
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars') // Your bucket name
-        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+    const previewUrl = URL.createObjectURL(file);
+    if (type === 'avatar') setAvatarPreview(previewUrl);
+    else setBannerPreview(previewUrl);
 
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(uploadData.path);
-      if (!urlData?.publicUrl) throw new Error("Could not get public URL for uploaded image.");
-      
-      console.log(`${fileType} uploaded successfully, URL:`, urlData.publicUrl);
-      return urlData.publicUrl;
-
-    } catch (error) {
-        console.error(`Supabase storage ${fileType} upload error:`, error);
-        // Try to provide a more specific error message if possible
-        const message = error.message || (error.error ? `${error.error}: ${error.message}` : 'Unknown upload error');
-        throw new Error(`Failed to upload ${fileType}: ${message}`);
-    } finally {
-        if (fileType === 'avatar') setUploadingAvatar(false);
-        if (fileType === 'banner') setUploadingBanner(false);
-    }
+    setError('');
+  };
+  
+  const uploadFile = async (file, type) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Authentication required for upload.");
+    const userId = session.user.id;
+    const filePath = `${userId}/${type}/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+    
+    const { data, error } = await supabase.storage.from('avatars').upload(filePath, file);
+    if (error) throw new Error(`Upload failed: ${error.message}`);
+    
+    return supabase.storage.from('avatars').getPublicUrl(data.path).data.publicUrl;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormLoading(true); setFormError(null); setFormSuccess(null);
+  async function handleFormSubmit(event) {
+    event.preventDefault(); // Prevent default form submission since we are handling uploads first
+    const formData = new FormData(event.currentTarget);
+    setError(''); setSuccess('');
+    
+    let finalAvatarUrl = avatarUrl;
+    let finalBannerUrl = bannerUrl;
+    const avatarFile = formData.get('avatarFile');
+    const bannerFile = formData.get('bannerFile');
 
-    if (!username.trim()) { setFormError("Username cannot be empty."); setFormLoading(false); return; }
-    if (!/^[a-zA-Z0-9_.-]{3,20}$/.test(username.trim())) { setFormError("Username: 3-20 chars (letters, numbers, _, ., -)."); setFormLoading(false); return; }
-
-    let finalAvatarUrl = currentAvatarUrl;
-    let finalBannerUrl = currentBannerUrl;
-
-    try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error("Authentication session error. Please log in again.");
-      const userId = sessionData.session.user.id;
-
-      if (selectedAvatarFile) {
-        console.log("Attempting to upload new avatar...");
-        finalAvatarUrl = await uploadFileToSupabase(selectedAvatarFile, userId, 'avatar');
-        setCurrentAvatarUrl(finalAvatarUrl); 
-        setSelectedAvatarFile(null); setPreviewAvatarUrl(null); 
-        if (avatarFileInputRef.current) avatarFileInputRef.current.value = "";
-      }
-      if (selectedBannerFile) {
-        console.log("Attempting to upload new banner...");
-        finalBannerUrl = await uploadFileToSupabase(selectedBannerFile, userId, 'banner');
-        setCurrentBannerUrl(finalBannerUrl); 
-        setSelectedBannerFile(null); setPreviewBannerUrl(null);
-        if (bannerFileInputRef.current) bannerFileInputRef.current.value = "";
-      }
-    } catch (uploadErr) {
-      // uploadFileToSupabase should throw an error with a message
-      setFormError(uploadErr.message || "An image upload failed.");
-      setFormLoading(false);
-      return;
+    // Step 1: Handle any file uploads first on the client-side
+    if (avatarFile?.size > 0 || bannerFile?.size > 0) {
+        setUploading(true);
+        try {
+          if (avatarFile && avatarFile.size > 0) {
+            finalAvatarUrl = await uploadFile(avatarFile, 'avatar');
+            setAvatarUrl(finalAvatarUrl);
+            setAvatarPreview(null);
+          }
+          if (bannerFile && bannerFile.size > 0) {
+            finalBannerUrl = await uploadFile(bannerFile, 'banner');
+            setBannerUrl(finalBannerUrl);
+            setBannerPreview(null);
+          }
+        } catch (uploadError) {
+          setError(uploadError.message);
+          setUploading(false);
+          return;
+        }
+        setUploading(false);
     }
     
-    try {
-      const profilePayload = {
-        username: username.trim(),
-        displayName: displayName.trim(),
-        bio: bio.trim(),
-        profileImageUrl: finalAvatarUrl,
-        bannerImageUrl: finalBannerUrl,
-        profileBackgroundColor: bgColor,
-      };
-      // console.log("Submitting profile to backend with payload:", profilePayload);
-      // Path is relative to apiClient's baseURL (http://localhost:3001/api)
-      const response = await apiClient.post('/users/profile', profilePayload); 
-      
-      setFormSuccess('Profile saved successfully!');
-      if (response.data) { 
-          setUsername(response.data.username || '');
-          setDisplayName(response.data.displayName || '');
-          setBio(response.data.bio || '');
-          setCurrentAvatarUrl(response.data.profileImageUrl || null);
-          setCurrentBannerUrl(response.data.bannerImageUrl || null);
-          setBgColor(response.data.profileBackgroundColor || '#FFFFFF');
+    // Step 2: Prepare FormData for the Server Action
+    const actionFormData = new FormData(formRef.current);
+    actionFormData.set('profileImageUrl', finalAvatarUrl || '');
+    actionFormData.set('bannerImageUrl', finalBannerUrl || '');
+    
+    // Step 3: Call the Server Action
+    startTransition(async () => {
+      const result = await updateProfile(actionFormData);
+      if (result.success) {
+        setSuccess(result.message);
+      } else {
+        setError(result.message);
       }
-       router.refresh(); // Good practice to refresh Server Components after mutation
-    } catch (err) {
-      console.error("Profile save error (backend):", err.response?.data || err.message);
-      setFormError(err.response?.data?.message || 'Failed to save profile details.');
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const displayAvatar = previewAvatarUrl || currentAvatarUrl;
-  const displayBanner = previewBannerUrl || currentBannerUrl;
-
-  if (serverError && !initialData && serverError.status !== 404 && serverError.code !== 'PROFILE_NOT_FOUND') {
-    return (
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto text-center">
-            <h1 className="text-2xl font-bold mb-6 text-red-700">Profile Error</h1>
-            <p className="text-red-500 p-3 bg-red-100 rounded text-sm">
-                Could not load your profile data: {serverError.message || serverError.bodyText || "An unexpected server error occurred."}
-            </p>
-             <button onClick={() => router.refresh()} className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                Try Again
-            </button>
-        </div>
-    );
+    });
   }
 
   return (
-    <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
-        {initialData && initialData.username ? 'Edit Your Profile' : 'Create Your Profile'}
-      </h1>
-      {formError && <p className="text-red-500 mb-4 p-3 bg-red-100 rounded text-sm text-center">{formError}</p>}
-      {formSuccess && <p className="text-green-600 mb-4 p-3 bg-green-100 rounded text-sm text-center">{formSuccess}</p>}
-      
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Banner Image Upload Section */}
-        <div className="space-y-2">
-          <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
-          {displayBanner ? (
-            <div className="w-full aspect-[3/1] relative rounded-lg overflow-hidden border border-gray-300 bg-gray-100">
-              <Image src={displayBanner} alt="Banner Preview" fill={true} className="object-cover" key={displayBanner} />
-            </div>
-          ) : (
-            <div className="w-full aspect-[3/1] bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 border border-dashed border-gray-300">
-              <span>No banner uploaded</span>
-            </div>
-          )}
-          <input type="file" id="bannerUploadInput" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'banner')} className="hidden" ref={bannerFileInputRef} />
-          <button id="bannerUploadButton" type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploadingBanner} className="mt-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-            {uploadingBanner ? 'Uploading...' : (currentBannerUrl || previewBannerUrl ? 'Change Banner' : 'Upload Banner')}
-          </button>
+    <form ref={formRef} onSubmit={handleFormSubmit} className="space-y-8 max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <h1 className="text-3xl font-bold text-center text-gray-800">{initialData?.username ? 'Edit Profile' : 'Create Your Profile'}</h1>
+        {error && <div className="p-3 text-center bg-red-100 text-red-700 rounded-md text-sm">{error}</div>}
+        {success && <div className="p-3 text-center bg-green-100 text-green-700 rounded-md text-sm">{success}</div>}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Banner Image</label>
+          <div className="w-full aspect-[3/1] rounded-lg bg-gray-100 relative flex items-center justify-center border-2 border-dashed">
+            {(bannerPreview || bannerUrl) && <Image src={bannerPreview || bannerUrl} alt="Banner Preview" layout="fill" className="object-cover rounded-lg" />}
+            <input type="file" name="bannerFile" onChange={(e) => handleFileChange(e, 'banner')} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <span className="z-10 text-gray-500 pointer-events-none">Click or drag to upload banner</span>
+          </div>
         </div>
 
-        {/* Avatar Upload Section */}
-        <div className="flex flex-col items-center space-y-3">
-          <label htmlFor="avatarUploadButton" className="block text-sm font-medium text-gray-700 self-start">Profile Picture</label>
-          {displayAvatar ? (
-            <Image src={displayAvatar} alt="Profile Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" onError={() => {setCurrentAvatarUrl(null); setPreviewAvatarUrl(null);}} key={displayAvatar} />
-          ) : ( <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl border-2 border-gray-300 shadow-sm"> {displayName ? displayName.charAt(0).toUpperCase() : (username ? username.charAt(0).toUpperCase() : '?')} </div> )}
-          <input type="file" id="avatarUploadInput" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" ref={avatarFileInputRef} />
-          <button id="avatarUploadButton" type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploadingAvatar} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"> 
-            {uploadingAvatar ? 'Uploading...' : (currentAvatarUrl || previewAvatarUrl ? 'Change Avatar' : 'Upload Avatar')}
-          </button>
+        <div className="flex flex-col items-center space-y-4">
+            <div className="relative w-32 h-32">
+                {(avatarPreview || avatarUrl) ? (
+                <Image src={avatarPreview || avatarUrl} alt="Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" />
+                ) : ( <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl border-2 border-gray-300 shadow-sm">?</div> )}
+                <label htmlFor="avatarFile" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 text-white text-xs font-semibold rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                Change
+                </label>
+                <input type="file" name="avatarFile" id="avatarFile" onChange={(e) => handleFileChange(e, 'avatar')} accept="image/*" className="hidden" />
+            </div>
         </div>
 
-        {/* Text Fields and Color Picker */}
         <div className="space-y-6">
-            <div><label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label><input type="text" id="username" value={username} onChange={(e) => setUsername(e.target.value)} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" /></div>
-            <div><label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label><input type="text" id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" /></div>
-            <div><label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label><textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea></div>
-        
-            {/* FIX: Add the color picker section here */}
-            <div>
-              <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700">Profile Background Color</label>
-              <div className="mt-1 flex items-center gap-4">
-                <input 
-                  type="color" 
-                  id="bgColor" 
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  className="w-14 h-10 p-1 border border-gray-300 rounded-md cursor-pointer"
-                />
-                <input 
-                  type="text"
-                  value={bgColor}
-                  readOnly
-                  className="w-28 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-600 bg-gray-50 focus:ring-0 focus:border-gray-300"
-                />
-              </div>
+          <div>
+            <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700">Profile Background Color</label>
+            <div className="mt-1 flex items-center gap-4">
+              <input type="color" name="profileBackgroundColor" id="bgColor" defaultValue={initialData?.profileBackgroundColor || '#FFFFFF'} className="w-12 h-10 p-1 border border-gray-300 rounded-md cursor-pointer"/>
             </div>
+          </div>
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+            <input type="text" name="username" id="username" defaultValue={initialData?.username || ''} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black"/>
+          </div>
+          <div>
+            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label>
+            <input type="text" name="displayName" id="displayName" defaultValue={initialData?.displayName || ''} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black"/>
+          </div>
+          <div>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
+            <textarea name="bio" id="bio" rows="4" defaultValue={initialData?.bio || ''} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black"></textarea>
+          </div>
         </div>
-        
-        <button type="submit" disabled={formLoading || uploadingAvatar || uploadingBanner} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70">
-          {formLoading ? 'Saving Profile...' : 'Save Profile'}
+
+        <button type="submit" disabled={isPending || uploading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70">
+          {(isPending || uploading) ? 'Saving...' : 'Save Profile'}
         </button>
-      </form>
-    </div>
+    </form>
   );
 }
