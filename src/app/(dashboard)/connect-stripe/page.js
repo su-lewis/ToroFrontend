@@ -2,30 +2,15 @@
 'use client';
 
 import { useState, useEffect, Suspense, useTransition } from 'react';
-import { createStripeOnboardLink } from '@/app/actions';
-import { fetchProtectedDataFromServer } from '@/lib/server-api'; // Still needed for initial GET
+import { getStripeStatus, createStripeOnboardLink } from '@/app/actions'; // Import from actions.js
 import Link from 'next/link';
-
-// NOTE: This page now requires being a Client Component to use useTransition
-// and handle the button click. We can fetch initial data with a server-side helper if needed,
-// but it's simpler to do it client-side since this page is interactive.
-// Let's create a server-side fetch function for this.
-
-async function getStripeStatus() {
-    'use server'; // This is a server action callable from a client component
-    try {
-        const status = await fetchProtectedDataFromServer('/stripe/connect/account-status');
-        return { success: true, data: status };
-    } catch (error) {
-        if (error.status === 404) return { success: true, data: null }; // Not an error, just not found
-        return { success: false, message: error.message };
-    }
-}
+import { useSearchParams } from 'next/navigation';
 
 function ConnectStripeContent() {
     const [error, setError] = useState(null);
     const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
-    const [isPending, startTransition] = useTransition(); // For the button action
+    const [isPending, startTransition] = useTransition();
+    const searchParams = useSearchParams();
 
     useEffect(() => {
         startTransition(async () => {
@@ -36,15 +21,19 @@ function ConnectStripeContent() {
                 setError(result.message);
             }
         });
-    }, []);
+        if (searchParams.get('reauth')) {
+            setError("Your previous session expired. Please try again.");
+        }
+    }, [searchParams]);
 
     const handleStartOnboarding = () => {
         startTransition(async () => {
+            setError(null);
             const result = await createStripeOnboardLink();
             if (result.success && result.url) {
                 window.location.href = result.url;
             } else {
-                setError(result.message || 'Failed to start Stripe connection.');
+                setError(result.message);
             }
         });
     };

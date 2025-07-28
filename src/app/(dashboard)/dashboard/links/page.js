@@ -2,27 +2,17 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { saveLinks } from '@/app/actions';
-import { fetchProtectedDataFromServer } from '@/lib/server-api';
+import { getLinks, saveLinks } from '@/app/actions'; // Import from actions.js
 import { TrashIcon } from '@heroicons/react/24/outline';
 
 const MAX_LINKS = 8;
-
-async function getLinks() {
-    'use server';
-    try {
-        const links = await fetchProtectedDataFromServer('/links');
-        return { success: true, data: links };
-    } catch (error) {
-        return { success: false, message: error.message };
-    }
-}
 
 export default function LinksPage() {
     const [links, setLinks] = useState(Array(MAX_LINKS).fill({ title: '', url: '' }));
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-    const [isPending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition(); // One transition for all server actions on this page
+    const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
     useEffect(() => {
         startTransition(async () => {
@@ -37,6 +27,7 @@ export default function LinksPage() {
             } else {
                 setError(result.message);
             }
+            setIsLoadingInitial(false);
         });
     }, []);
 
@@ -54,15 +45,20 @@ export default function LinksPage() {
             const result = await saveLinks(linksToSave);
             if (result.success) {
                 setSuccess(result.message);
+                // Re-populate form with potentially re-ordered data from backend
+                const savedLinks = result.data || [];
+                const displayLinks = [...savedLinks];
+                while (displayLinks.length < MAX_LINKS) {
+                    displayLinks.push({ title: '', url: '' });
+                }
+                setLinks(displayLinks);
             } else {
                 setError(result.message);
             }
         });
     };
 
-    if (isPending && links.every(l => l.title === '')) { // Show loading only on initial fetch
-        return <p>Loading your links...</p>;
-    }
+    if (isLoadingInitial) return <p>Loading your links...</p>;
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -76,7 +72,7 @@ export default function LinksPage() {
                             <label className="font-semibold text-gray-700">Link #{index + 1}</label>
                             <div className="flex flex-col md:flex-row gap-4 mt-2">
                                 <input type="text" value={link.title} onChange={(e) => handleLinkChange(index, 'title', e.target.value)} placeholder="Title" className="flex-grow w-full md:w-1/3 px-3 py-2 border rounded-md text-black" />
-                                <input type="text" value={link.url} onChange={(e) => handleLinkChange(index, 'url', e.target.value)} placeholder="URL (e.g., example.com)" className="flex-grow w-full md:w-2/3 px-3 py-2 border rounded-md text-black" />
+                                <input type="text" value={link.url} onChange={(e) => handleLinkChange(index, 'url', e.target.value)} placeholder="URL" className="flex-grow w-full md:w-2/3 px-3 py-2 border rounded-md text-black" />
                             </div>
                         </div>
                     ))}
