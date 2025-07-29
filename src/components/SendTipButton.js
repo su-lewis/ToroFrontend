@@ -13,20 +13,21 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   const [error, setError] = useState(null);
   const [isPending, startTransition] = useTransition();
 
-  // --- RESTORED CALCULATION: "Donor pays on top" where platform covers Stripe fees ---
-  const platformFeePercentage = 0.15; // Your 15% margin
-  const stripeFeePercentage = 0.029;  // Assumed Stripe rate
-  const stripeFeeFixedDollars = 0.30;   // Assumed Stripe rate
-
+  // --- RESTORED a simpler fee calculation for UI display ---
+  // The backend will still do the full "gross-up" calculation. This is just for user clarity.
+  const platformFeePercentage = 0.15;
   const calculateTotalDonorPays = (creatorAmount) => {
-    if (isNaN(creatorAmount) || creatorAmount <= 0) return { total: 0, platformFee: 0 };
-    const total = (creatorAmount + stripeFeeFixedDollars) / (1 - platformFeePercentage - stripeFeePercentage);
-    const platformFee = total - creatorAmount;
-    return { total, platformFee };
+    if (isNaN(creatorAmount) || creatorAmount <= 0) return { total: 0, fee: 0 };
+    // This is the simpler "add-on" calculation for display, which is easier for users to understand.
+    const fee = creatorAmount * platformFeePercentage;
+    const total = creatorAmount + fee;
+    return { total, fee };
   };
 
   const creatorAmountNum = parseFloat(amount);
-  const { total: totalDonorPaysNum, platformFee: platformAndStripeFee } = calculateTotalDonorPays(creatorAmountNum);
+  const { total: totalDonorPaysNum, fee: platformFeeNum } = calculateTotalDonorPays(creatorAmountNum);
+  // NOTE: The backend's more precise calculation will be the source of truth for the charge.
+  // This frontend calculation is for display purposes to give the user a close estimate.
 
   const handleTipSubmit = async (formData) => {
     setError(null);
@@ -51,17 +52,20 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   };
 
   return (
-    <form action={handleTipSubmit} className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
-      <h3 className="text-xl font-bold mb-4 text-center text-gray-800 dark:text-gray-100">
-        Send a Tip to {recipientDisplayName || recipientUsername}
+    <form action={handleTipSubmit} className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 p-6 md:p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600">
+      <h3 className="text-2xl font-semibold mb-1 text-gray-800 dark:text-gray-100 text-center">
+        Send to {recipientDisplayName || recipientUsername}!
       </h3>
+      <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">
+        Enter amount you want them to receive.
+      </p>
       
-      {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4 p-2 bg-red-100 dark:bg-red-900/30 rounded-md text-center">{error}</p>}
+      {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4 p-3 bg-red-100 dark:bg-red-900/30 rounded-md text-center">{error}</p>}
       
       <input type="hidden" name="amount" value={amount} />
       <input type="hidden" name="recipientUsername" value={recipientUsername} />
 
-      <div className="flex items-center justify-center space-x-2 mb-4">
+      <div className="flex items-center justify-center space-x-2 mb-3">
         <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">$</span>
         <input
           type="text"
@@ -70,23 +74,25 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
             const val = e.target.value;
             if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) setAmount(val);
           }}
-          min="1.00"
-          className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-2xl font-semibold text-black bg-white"
+          min="1.00" 
+          className="w-24 md:w-28 px-3 py-2.5 border border-gray-300 rounded-lg text-center text-xl font-medium text-black bg-white shadow-sm"
         />
       </div>
       
-      {/* --- RESTORED FEE BREAKDOWN TEXT --- */}
+      {/* --- RESTORED FEE BREAKDOWN and TEXT --- */}
       {creatorAmountNum > 0 && (
-        <div className="text-xs text-gray-600 dark:text-gray-300 text-center mb-4 p-3 bg-gray-100 dark:bg-gray-900/30 rounded-md">
+        <div className="text-xs text-gray-600 dark:text-gray-400 text-center mb-4 p-2 bg-gray-100 dark:bg-gray-900/30 rounded-md">
             <p>
-                To ensure <span className="font-semibold">{recipientDisplayName || recipientUsername}</span> receives: 
-                <span className="font-bold text-base block">${creatorAmountNum.toFixed(2)}</span>
+                {recipientDisplayName || recipientUsername} receives: <span className="font-semibold">${creatorAmountNum.toFixed(2)}</span>
             </p>
-            <p className="mt-2">
-                A fee of <span className="font-semibold">${platformAndStripeFee.toFixed(2)}</span> is added to cover platform and payment processing costs.
+            <p className="mt-1">
+                Platform Fee (15%): <span className="font-semibold">${platformFeeNum.toFixed(2)}</span>
             </p>
             <p className="font-bold text-sm mt-2">
                 Total You Pay: <span className="font-semibold">${totalDonorPaysNum.toFixed(2)}</span>
+            </p>
+            <p className="text-[10px] text-gray-500 mt-1">
+                (Stripe's processing fees are handled separately)
             </p>
         </div>
       )}
@@ -95,7 +101,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
         <input
           id="donorName"
           name="donorName"
-          placeholder="Your name (optional)"
+          placeholder="Anonymous"
           maxLength="40"
           className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-lg text-black bg-white text-center"
         />
@@ -104,9 +110,10 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       <button
         type="submit"
         disabled={isPending || isNaN(creatorAmountNum) || creatorAmountNum < 1.00}
-        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3.5 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
       >
-        {isPending ? 'Processing...' : `Pay $${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}
+        {/* --- RESTORED BUTTON TEXT --- */}
+        {isPending ? 'Processing...' : `Tip $${creatorAmountNum > 0 ? creatorAmountNum.toFixed(2) : '...'}`}
       </button>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">Powered by Stripe</p>
     </form>
