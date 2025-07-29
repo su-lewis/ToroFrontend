@@ -18,7 +18,9 @@ export default async function ProfilePageServer() {
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Profile Settings</h1>
-      <ProfileForm initialData={initialProfileData} serverError={serverFetchError} />
+      <div className="flex flex-col items-center justify-center p-4">
+        <ProfileForm initialData={initialProfileData} serverError={serverFetchError} />
+      </div>
     </div>
   );
 }

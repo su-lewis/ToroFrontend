@@ -18,6 +18,8 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
   const formRef = useRef(null);
+  const avatarFileInputRef = useRef(null);
+  const bannerFileInputRef = useRef(null);
 
   const handleFileChange = (e, type) => {
     const file = e.target.files?.[0];
@@ -78,95 +80,92 @@ export default function ProfileForm({ initialData: profile, serverError }) {
     });
   }
 
+  const displayAvatar = avatarPreview || avatarUrl;
+  const displayBanner = bannerPreview || bannerUrl;
+
   return (
-    // The form tag and surrounding elements from your preferred layout
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 max-w-2xl bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
-      <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-gray-100">
-        {profile?.username ? 'Edit Profile' : 'Create Your Profile'}
+    <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
+        {profile?.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
-      {error && <div className="p-3 bg-red-100 text-red-700 rounded-md dark:bg-red-900/30 dark:text-red-300">{error}</div>}
-      {success && <div className="p-3 bg-green-100 text-green-700 rounded-md dark:bg-green-900/30 dark:text-green-300">{success}</div>}
+      {error && <p className="text-red-500 mb-4 p-3 bg-red-100 rounded text-sm text-center">{error}</p>}
+      {success && <p className="text-green-600 mb-4 p-3 bg-green-100 rounded text-sm text-center">{success}</p>}
       
-      {/* Banner Upload UI integrated into your layout */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Banner Image</label>
-        <div className="mt-1 w-full aspect-[3/1] rounded-md bg-gray-100 dark:bg-gray-700 relative flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-          {(bannerPreview || bannerUrl) && <Image src={bannerPreview || bannerUrl} alt="Banner Preview" layout="fill" className="object-cover rounded-md" />}
-          <input type="file" name="bannerFile" onChange={(e) => handleFileChange(e, 'banner')} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-          <span className="z-10 p-2 bg-white/70 dark:bg-black/50 text-gray-600 dark:text-gray-200 rounded-md pointer-events-none">
-            {uploading ? 'Uploading...' : 'Click or drag to upload'}
-          </span>
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
+        {/* Banner Image Upload Section */}
+        <div className="space-y-2">
+          <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
+          {displayBanner ? (
+            <div className="w-full aspect-[3/1] relative rounded-lg overflow-hidden border border-gray-300 bg-gray-100">
+              <Image src={displayBanner} alt="Banner Preview" fill={true} className="object-cover" key={displayBanner} />
+            </div>
+          ) : (
+            <div className="w-full aspect-[3/1] bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 border border-dashed border-gray-300">
+              <span>No banner uploaded</span>
+            </div>
+          )}
+          <input type="file" name="bannerFile" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'banner')} className="hidden" ref={bannerFileInputRef} />
+          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            {uploading ? 'Uploading...' : 'Change Banner'}
+          </button>
         </div>
-      </div>
 
-      {/* Avatar Upload UI integrated into your layout */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Picture</label>
-        <div className="mt-1 flex items-center gap-4">
-          <div className="relative w-20 h-20">
-            {(avatarPreview || avatarUrl) ? (
-            <Image src={avatarPreview || avatarUrl} alt="Avatar Preview" width={80} height={80} className="w-20 h-20 rounded-full object-cover border-2 border-gray-300" />
-            ) : ( <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-2xl border-2 border-gray-300">?</div> )}
+        {/* Avatar Upload Section */}
+        <div className="flex flex-col items-center space-y-3">
+          <label htmlFor="avatarUploadButton" className="block text-sm font-medium text-gray-700 self-start">Profile Picture</label>
+          {displayAvatar ? (
+            <Image src={displayAvatar} alt="Profile Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" key={displayAvatar} />
+          ) : ( 
+            <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl border-2 border-gray-300 shadow-sm">
+              {profile?.displayName ? profile.displayName.charAt(0).toUpperCase() : (profile?.username ? profile.username.charAt(0).toUpperCase() : '?')}
+            </div> 
+          )}
+          <input type="file" name="avatarFile" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" ref={avatarFileInputRef} />
+          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"> 
+            {uploading ? 'Uploading...' : 'Change Avatar'}
+          </button>
+        </div>
+
+        {/* Text Fields and Color Picker */}
+        <div className="space-y-6">
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+            <input type="text" name="username" id="username" defaultValue={profile?.username || ''} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" />
           </div>
-          <input type="file" name="avatarFile" id="avatarFile" onChange={(e) => handleFileChange(e, 'avatar')} accept="image/*" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+          <div>
+            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label>
+            <input type="text" name="displayName" id="displayName" defaultValue={profile?.displayName || ''} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <div>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
+            <textarea name="bio" id="bio" defaultValue={profile?.bio || ''} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea>
+          </div>
+          
+          {/* Profile Background Color */}
+          <div>
+            <label htmlFor="profileBackgroundColor" className="block text-sm font-medium text-gray-700">Profile Background Color</label>
+            <div className="mt-1 flex items-center gap-4">
+              <input 
+                type="color" 
+                name="profileBackgroundColor"
+                id="profileBackgroundColor" 
+                defaultValue={profile?.profileBackgroundColor || '#FFFFFF'}
+                className="w-14 h-10 p-1 border border-gray-300 rounded-md cursor-pointer"
+              />
+              <input 
+                type="text"
+                defaultValue={profile?.profileBackgroundColor || '#FFFFFF'}
+                readOnly
+                className="w-28 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-600 bg-gray-50 focus:ring-0 focus:border-gray-300"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-      
-      {/* Your preferred text and color inputs */}
-      <div>
-        <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Background Color</label>
-        <input type="color" name="profileBackgroundColor" id="bgColor" defaultValue={profile?.profileBackgroundColor || '#FFFFFF'} className="mt-1 w-full h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer"/>
-      </div>
-      <div>
-        <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
-        <div className="mt-1 flex rounded-md shadow-sm">
-          <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-            your-page.com/
-          </span>
-          <input
-            type="text"
-            name="username"
-            id="username"
-            defaultValue={profile?.username || ''}
-            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300 text-black bg-white"
-            placeholder="your-unique-username"
-            required
-          />
-        </div>
-      </div>
-      <div>
-        <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Display Name</label>
-        <input
-          type="text"
-          name="displayName"
-          id="displayName"
-          defaultValue={profile?.displayName || ''}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black bg-white"
-          placeholder="Your Full Name"
-        />
-      </div>
-      <div>
-        <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
-        <textarea
-          name="bio"
-          id="bio"
-          rows="3"
-          defaultValue={profile?.bio || ''}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black bg-white"
-          placeholder="A short description about yourself."
-        ></textarea>
-      </div>
-
-      {/* The save button from your layout */}
-      <div>
-        <button
-          type="submit"
-          disabled={isPending || uploading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
-        >
-          {(isPending || uploading) ? 'Saving...' : 'Save Profile'}
+        
+        <button type="submit" disabled={isPending || uploading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70">
+          {(isPending || uploading) ? 'Saving Profile...' : 'Save Profile'}
         </button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
