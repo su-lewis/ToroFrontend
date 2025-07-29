@@ -110,23 +110,23 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const displayBanner = bannerPreview || bannerUrl;
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-8 md:p-12 rounded-xl shadow-lg max-w-full mx-8">
-      <h1 className="text-4xl font-bold mb-10 text-gray-800 dark:text-gray-100 text-center">
+    <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-full mx-8">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 text-center">
         {profile?.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
       {error && <p className="text-red-500 dark:text-red-300 mb-4 p-3 bg-red-100 dark:bg-red-900/30 rounded text-sm text-center">{error}</p>}
       {success && <p className="text-green-600 dark:text-green-300 mb-4 p-3 bg-green-100 dark:bg-green-900/30 rounded text-sm text-center">{success}</p>}
       
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-10">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
         {/* Banner Image Upload Section */}
-        <div className="space-y-4">
-          <label htmlFor="bannerUploadButton" className="block text-lg font-medium text-gray-700 dark:text-gray-300">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
+        <div className="space-y-2">
+          <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
           {displayBanner ? (
             <div className="w-full aspect-[3/1] relative rounded-lg overflow-hidden border border-gray-300 bg-gray-100">
               <Image src={displayBanner} alt="Banner Preview" fill={true} className="object-cover" key={displayBanner} />
             </div>
           ) : (
-            <div className="w-full aspect-[3/1] bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 border border-dashed border-gray-300 text-xl">
+            <div className="w-full aspect-[3/1] bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 border border-dashed border-gray-300">
               <span>No banner uploaded</span>
             </div>
           )}
@@ -138,18 +138,18 @@ export default function ProfileForm({ initialData: profile, serverError }) {
             className="hidden" 
             ref={bannerFileInputRef} 
           />
-          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-3 px-6 py-3 bg-gray-700 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 text-lg">
+          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50">
             {uploading ? 'Uploading...' : 'Change Banner'}
           </button>
         </div>
 
         {/* Avatar Upload Section */}
-        <div className="flex flex-col items-center space-y-4">
-          <label htmlFor="avatarUploadButton" className="block text-lg font-medium text-gray-700 dark:text-gray-300 self-start">Profile Picture</label>
+        <div className="flex flex-col items-center space-y-3">
+          <label htmlFor="avatarUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300 self-start">Profile Picture</label>
           {displayAvatar ? (
-            <Image src={displayAvatar} alt="Profile Avatar Preview" width={160} height={160} className="w-40 h-40 rounded-full object-cover border-2 border-gray-300 shadow-sm" key={displayAvatar} />
+            <Image src={displayAvatar} alt="Profile Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" key={displayAvatar} />
           ) : ( 
-            <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-5xl border-2 border-gray-300 shadow-sm">
+            <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl border-2 border-gray-300 shadow-sm">
               {profile?.displayName ? profile.displayName.charAt(0).toUpperCase() : (profile?.username ? profile.username.charAt(0).toUpperCase() : '?')}
             </div> 
           )}
@@ -161,48 +161,48 @@ export default function ProfileForm({ initialData: profile, serverError }) {
             className="hidden" 
             ref={avatarFileInputRef} 
           />
-          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-6 py-3 bg-gray-700 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 text-lg"> 
+          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"> 
             {uploading ? 'Uploading...' : 'Change Avatar'}
           </button>
         </div>
 
         {/* Text Fields and Color Picker */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-lg font-medium text-gray-700 dark:text-gray-300">Username</label>
-            <input type="text" name="username" id="username" defaultValue={profile?.username || ''} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-2 block w-full px-6 py-4 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500 text-lg" />
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+            <input type="text" name="username" id="username" defaultValue={profile?.username || ''} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
-            <label htmlFor="displayName" className="block text-lg font-medium text-gray-700 dark:text-gray-300">Display Name</label>
-            <input type="text" name="displayName" id="displayName" defaultValue={profile?.displayName || ''} className="mt-2 block w-full px-6 py-4 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500 text-lg" />
+            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Display Name</label>
+            <input type="text" name="displayName" id="displayName" defaultValue={profile?.displayName || ''} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
-            <label htmlFor="bio" className="block text-lg font-medium text-gray-700 dark:text-gray-300">Bio</label>
-            <textarea name="bio" id="bio" defaultValue={profile?.bio || ''} rows="6" className="mt-2 block w-full px-6 py-4 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500 text-lg" placeholder="A little about yourself..."></textarea>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
+            <textarea name="bio" id="bio" defaultValue={profile?.bio || ''} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea>
           </div>
           
           {/* Profile Background Color */}
           <div>
-            <label htmlFor="profileBackgroundColor" className="block text-lg font-medium text-gray-700 dark:text-gray-300">Profile Background Color</label>
-            <div className="mt-2 flex items-center gap-6">
+            <label htmlFor="profileBackgroundColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Background Color</label>
+            <div className="mt-1 flex items-center gap-4">
               <input 
                 type="color" 
                 name="profileBackgroundColor"
                 id="profileBackgroundColor" 
                 defaultValue={profile?.profileBackgroundColor || '#FFFFFF'}
-                className="w-16 h-12 p-1 border border-gray-300 rounded-md cursor-pointer"
+                className="w-14 h-10 p-1 border border-gray-300 rounded-md cursor-pointer"
               />
               <input 
                 type="text"
                 defaultValue={profile?.profileBackgroundColor || '#FFFFFF'}
                 readOnly
-                className="w-32 px-4 py-3 border border-gray-300 rounded-md shadow-sm text-gray-600 bg-gray-50 focus:ring-0 focus:border-gray-300 text-lg"
+                className="w-28 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-600 bg-gray-50 focus:ring-0 focus:border-gray-300"
               />
             </div>
           </div>
         </div>
         
-        <button type="submit" disabled={isPending || uploading} className="w-full flex justify-center py-4 px-6 border border-transparent rounded-md shadow-sm text-xl font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70">
+        <button type="submit" disabled={isPending || uploading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70">
           {(isPending || uploading) ? 'Saving Profile...' : 'Save Profile'}
         </button>
       </form>
