@@ -46,36 +46,62 @@ export default function ProfileForm({ initialData: profile, serverError }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
     setError(''); setSuccess('');
+    
     let finalAvatarUrl = avatarUrl;
     let finalBannerUrl = bannerUrl;
+
+    // Get files directly from the form data
+    const formData = new FormData(event.currentTarget);
     const avatarFile = formData.get('avatarFile');
     const bannerFile = formData.get('bannerFile');
 
-    if (avatarFile?.size > 0 || bannerFile?.size > 0) {
-        setUploading(true);
-        try {
-          if (avatarFile && avatarFile.size > 0) finalAvatarUrl = await uploadFile(avatarFile, 'avatar');
-          if (bannerFile && bannerFile.size > 0) finalBannerUrl = await uploadFile(bannerFile, 'banner');
-        } catch (uploadError) {
-          setError(uploadError.message); setUploading(false); return;
-        }
-        setUploading(false);
-    }
-    
-    const actionFormData = new FormData(formRef.current);
-    actionFormData.set('profileImageUrl', finalAvatarUrl || '');
-    actionFormData.set('bannerImageUrl', finalBannerUrl || '');
-    
+    // Start the transition immediately for better UX
     startTransition(async () => {
-      const result = await updateProfile(actionFormData);
-      if (result.success) {
-        setSuccess(result.message);
-        setAvatarPreview(null); setBannerPreview(null);
-        setAvatarUrl(finalAvatarUrl); setBannerUrl(finalBannerUrl);
-      } else {
-        setError(result.message);
+      try {
+        // Upload files if they exist
+        if ((avatarFile && avatarFile.size > 0) || (bannerFile && bannerFile.size > 0)) {
+          setUploading(true);
+          
+          try {
+            if (avatarFile && avatarFile.size > 0) {
+              finalAvatarUrl = await uploadFile(avatarFile, 'avatar');
+              setAvatarUrl(finalAvatarUrl);
+              setAvatarPreview(null);
+              // Clear the file input
+              if (avatarFileInputRef.current) avatarFileInputRef.current.value = '';
+            }
+            if (bannerFile && bannerFile.size > 0) {
+              finalBannerUrl = await uploadFile(bannerFile, 'banner');
+              setBannerUrl(finalBannerUrl);
+              setBannerPreview(null);
+              // Clear the file input
+              if (bannerFileInputRef.current) bannerFileInputRef.current.value = '';
+            }
+          } catch (uploadError) {
+            setError(uploadError.message);
+            setUploading(false);
+            return;
+          }
+          setUploading(false);
+        }
+
+        // Create form data for the server action
+        const actionFormData = new FormData(formRef.current);
+        actionFormData.set('profileImageUrl', finalAvatarUrl || '');
+        actionFormData.set('bannerImageUrl', finalBannerUrl || '');
+        
+        // Submit to server action
+        const result = await updateProfile(actionFormData);
+        
+        if (result.success) {
+          setSuccess(result.message);
+        } else {
+          setError(result.message);
+        }
+      } catch (error) {
+        console.error('Form submission error:', error);
+        setError('An unexpected error occurred. Please try again.');
       }
     });
   }
@@ -84,7 +110,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const displayBanner = bannerPreview || bannerUrl;
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-5xl mx-auto">
+    <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 text-center">
         {profile?.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
@@ -104,7 +130,14 @@ export default function ProfileForm({ initialData: profile, serverError }) {
               <span>No banner uploaded</span>
             </div>
           )}
-          <input type="file" name="bannerFile" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'banner')} className="hidden" ref={bannerFileInputRef} />
+          <input 
+            type="file" 
+            name="bannerFile" 
+            accept="image/png, image/jpeg, image/gif, image/webp" 
+            onChange={(e) => handleFileChange(e, 'banner')} 
+            className="hidden" 
+            ref={bannerFileInputRef} 
+          />
           <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50">
             {uploading ? 'Uploading...' : 'Change Banner'}
           </button>
@@ -120,7 +153,14 @@ export default function ProfileForm({ initialData: profile, serverError }) {
               {profile?.displayName ? profile.displayName.charAt(0).toUpperCase() : (profile?.username ? profile.username.charAt(0).toUpperCase() : '?')}
             </div> 
           )}
-          <input type="file" name="avatarFile" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" ref={avatarFileInputRef} />
+          <input 
+            type="file" 
+            name="avatarFile" 
+            accept="image/png, image/jpeg, image/gif, image/webp" 
+            onChange={(e) => handleFileChange(e, 'avatar')} 
+            className="hidden" 
+            ref={avatarFileInputRef} 
+          />
           <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"> 
             {uploading ? 'Uploading...' : 'Change Avatar'}
           </button>
