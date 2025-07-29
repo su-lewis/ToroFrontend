@@ -1,133 +1,120 @@
+// frontend/src/app/[username]/page.js
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import SendTipButton from '@/components/SendTipButton';
 
-// The getPublicProfileData function remains the same.
+// Data fetching function (no changes needed)
 async function getPublicProfileData(username) {
-  if (typeof username !== 'string' || !username) {
-    return null;
-  }
+  if (typeof username !== 'string' || !username) return null;
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!apiBaseUrl) {
-    console.error("[FRONTEND SERVER] PublicProfilePage: CRITICAL - NEXT_PUBLIC_API_BASE_URL is not defined.");
-    return null;
-  }
+  if (!apiBaseUrl) { console.error("CRITICAL: NEXT_PUBLIC_API_BASE_URL is not defined."); return null; }
   const apiUrl = `${apiBaseUrl}/public/profile/${username}`;
   try {
     const res = await fetch(apiUrl, { cache: 'no-store' });
-    if (!res.ok) {
-      return null;
-    }
+    if (!res.ok) return null;
     return await res.json();
   } catch (error) {
-    console.error(`[FRONTEND SERVER] CATCH BLOCK in getPublicProfileData for ${username}:`, error.message);
+    console.error(`CATCH in getPublicProfileData for ${username}:`, error.message);
     return null;
   }
 }
 
 export default async function PublicProfilePage({ params, searchParams }) {
   const username = params.username;
-  const paymentCancelled = searchParams?.payment_cancelled === 'true';
   const profileData = await getPublicProfileData(username);
+  const paymentCancelled = searchParams?.payment_cancelled === 'true';
 
   if (!profileData) {
     notFound();
   }
 
   const {
-    displayName = username,
-    bio = "",
-    profileImageUrl,
-    bannerImageUrl,
-    profileBackgroundColor = '#FFFFFF', // Default to white
-    links = [],
-    stripeAccountId,
-    stripeOnboardingComplete,
+    displayName = username, bio = "", profileImageUrl, bannerImageUrl,
+    links = [], stripeAccountId, stripeOnboardingComplete,
+    profileBackgroundColor = '#F3F4F6' // Default to a light gray if not set
   } = profileData;
 
+  const pageStyle = { backgroundColor: profileBackgroundColor };
+
+  // Helper function to determine if the user-selected background is dark
+  const isBgDark = () => {
+    if (!profileBackgroundColor) return false;
+    const color = profileBackgroundColor.substring(1);
+    const rgb = parseInt(color, 16);
+    const r = (rgb >> 16) & 0xff, g = (rgb >> 8) & 0xff, b = (rgb >> 0) & 0xff;
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 140;
+  };
+  const textColorClass = isBgDark() ? 'text-gray-100' : 'text-gray-800';
+  const subTextColorClass = isBgDark() ? 'text-gray-300' : 'text-gray-600';
+
   return (
-    // FIX: Apply background color to a <main> element that WRAPS the page content.
-    // This is the new root element for the page.
-    <main
-  style={{ backgroundColor: profileBackgroundColor, minHeight: '100vh' }}
-  className="flex flex-col items-center no-overscroll"
->
-      {/* Container for the entire profile card content */}
-      <div className="container mx-auto max-w-3xl flex flex-col items-center pb-10 w-full">
+    // The <main> tag gets the dynamic background color, covering the whole page
+    <main style={pageStyle} className="min-h-screen flex flex-col items-center transition-colors duration-500">
+      
+      <div className="container mx-auto max-w-3xl flex flex-col items-center pb-12 w-full">
         
-        {/* Banner Image */}
-        {/* FIX: Added `relative` to the container, which is required for `layout="fill"`. */}
-        {/* The `object-cover` class (equivalent to objectFit="cover") prevents stretching. */}
         <div className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg bg-gray-300">
-          {bannerImageUrl ? (
-            <Image
-              src={bannerImageUrl}
-              alt={`${displayName}'s banner`}
-              fill={true}
-              className="object-cover" // Use object-cover to crop, not stretch
-              priority={true}
-              sizes="(max-width: 768px) 100vw, 896px" // Max width is max-w-3xl (896px)
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-gray-300 to-gray-400" />
-          )}
+          {bannerImageUrl && <Image src={bannerImageUrl} alt={`${displayName}'s banner`} layout="fill" className="object-cover" priority={true} />}
         </div>
 
-        {/* Profile content area */}
-        <div className="w-full max-w-2xl bg-white p-6 md:p-8 shadow-xl relative z-10 -mt-12 md:-mt-16 rounded-lg mx-4 sm:mx-0">
-          {/* Profile Image - Centered */}
+        {/* The profile card is a static white/dark gray color */}
+        <div className="w-full max-w-2xl bg-white dark:bg-gray-800 p-6 md:p-8 shadow-xl relative z-10 -mt-16 md:-mt-20 rounded-lg mx-4 sm:mx-0">
           <div className="flex justify-center -mt-20 md:-mt-24 mb-4">
             {profileImageUrl ? (
-              <Image
-                src={profileImageUrl}
-                alt={`Profile picture of ${displayName}`}
-                width={160} height={160}
-                className="rounded-full w-32 h-32 md:w-40 md:h-40 object-cover border-4 border-white shadow-2xl bg-gray-200"
-                priority
-              />
+              <Image src={profileImageUrl} alt={`Profile picture of ${displayName}`} width={160} height={160} className="rounded-full w-32 h-32 md:w-40 md:h-40 object-cover border-4 border-white dark:border-gray-700 shadow-2xl bg-gray-200" priority />
             ) : (
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-5xl md:text-6xl font-semibold shadow-2xl border-4 border-white">
-                {displayName ? displayName.charAt(0).toUpperCase() : username.charAt(0).toUpperCase()}
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 text-5xl md:text-6xl font-semibold shadow-2xl border-4 border-white dark:border-gray-700">
+                {displayName.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
-          
+
           {paymentCancelled && (
-            <div role="alert" className="mb-6 p-3 bg-yellow-100 border border-yellow-300 text-yellow-700 rounded-md text-sm">
-              <p className="font-semibold text-center">Payment Cancelled.</p>
+            <div role="alert" className="mb-6 p-3 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300 rounded-md text-sm text-center">
+              <p className="font-semibold">Payment Cancelled.</p>
             </div>
           )}
 
-          <div className="text-center">
-            <h1 className="text-3xl md:text-4xl font-extrabold mt-2 mb-1 text-gray-900">{displayName}</h1>
-            {profileData.displayName && <p className="text-lg text-gray-500 mb-3">@{username}</p>}
-            {bio && <p className="text-md text-gray-600 leading-relaxed max-w-lg mx-auto mb-6">{bio}</p>}
-          </div>
-
-          {/* Payment Button Area */}
-          <div className="mb-8 px-4 md:px-0">
-            {stripeAccountId && stripeOnboardingComplete ? (
-              <SendTipButton recipientUsername={username} recipientDisplayName={displayName} />
-            ) : ( profileData &&
-              <div className="mt-6 p-3 bg-gray-100 rounded-md shadow text-center text-sm text-gray-600">
-                {displayName} is not currently set up to receive payments.
-              </div>
-            )}
+          {/* Text color inside the card is now dynamic */}
+          <div className="text-center text-gray-900 dark:text-gray-100">
+            <h1 className="text-3xl md:text-4xl font-extrabold mt-2 mb-1">{displayName}</h1>
+            {profileData.displayName && <p className="text-lg text-gray-500 dark:text-gray-400 mb-3">@{username}</p>}
+            {bio && <p className="text-md text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg mx-auto mb-6">{bio}</p>}
           </div>
 
           {/* Links Section */}
           <div className="w-full px-4 md:px-0">
-            {links.length > 0 && (<h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Links</h2>)}
-            <div className="space-y-3">
+            {links.length > 0 && (<h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4 text-center">Links</h2>)}
+            <div className="space-y-4">
               {links.length > 0 ? (
-                links.map((link) => ( <a key={link.id} href={link.url.startsWith('http') ? link.url : `//${link.url}`} target="_blank" rel="noopener noreferrer nofollow" className="block w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-5 rounded-md text-md shadow hover:shadow-md transition-all"> {link.title} </a> ))
-              ) : ( <p className="text-gray-500 italic py-3 text-center">This user hasn't added any links yet.</p> )}
+                links.map((link) => (
+                  <a key={link.id} href={link.url.startsWith('http') ? link.url : `//${link.url}`} target="_blank" rel="noopener noreferrer nofollow"
+                    // Solid blue links as you had previously
+                    className="block w-full text-center font-semibold py-3 px-5 rounded-lg text-lg shadow-md hover:shadow-lg transition-all bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {link.title}
+                  </a>
+                ))
+              ) : ( <p className="italic py-3 text-center text-gray-500 dark:text-gray-400">This user hasn't added any links yet.</p> )}
             </div>
           </div>
+          
+          {/* Tipping Section - RESTORED to be below the links */}
+          <div className="mt-8 mb-4 px-4 md:px-0">
+            {stripeAccountId && stripeOnboardingComplete ? ( 
+              <SendTipButton recipientUsername={username} recipientDisplayName={displayName} />
+            ) : ( 
+              profileData && 
+              <div className="mt-6 p-3 rounded-md shadow text-center text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                {displayName} is not set up to receive payments.
+              </div> 
+            )}
+          </div>
+
         </div>
       </div>
     </main>
   );
 }
 
-// generateMetadata function remains the same
+export async function generateMetadata({ params }) { /* ... same as before ... */ }

@@ -2,8 +2,9 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { getLinks, saveLinks } from '@/app/actions'; // Import Server Actions
-import { TrashIcon } from '@heroicons/react/24/outline';
+// Import Server Actions from the central actions file
+import { getLinks, saveLinks } from '@/app/actions'; 
+import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const MAX_LINKS = 8;
 
@@ -11,13 +12,15 @@ export default function LinksPage() {
     const [links, setLinks] = useState(Array(MAX_LINKS).fill({ title: '', url: '' }));
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-    const [isPending, startTransition] = useTransition(); // For all server actions on this page
+    // useTransition handles pending states for Server Actions
+    const [isPending, startTransition] = useTransition(); 
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
     useEffect(() => {
-        // Fetch initial links using a server action
+        // Use a transition to fetch initial data without blocking UI
         startTransition(async () => {
-            const result = await getLinks();
+            // Call the imported Server Action
+            const result = await getLinks(); 
             if (result.success) {
                 const fetchedLinks = result.data || [];
                 const displayLinks = [...fetchedLinks];
@@ -30,7 +33,7 @@ export default function LinksPage() {
             }
             setIsLoadingInitial(false);
         });
-    }, []); // Runs once on component mount
+    }, []); // Empty array ensures this runs only once on component mount
 
     const handleLinkChange = (index, field, value) => {
         const updatedLinks = [...links];
@@ -45,7 +48,8 @@ export default function LinksPage() {
 
     const handleSaveChanges = async (e) => {
         e.preventDefault();
-        setError(null); setSuccess(null);
+        setError(null); 
+        setSuccess(null);
         
         const linksToSave = links.filter(link => link.title.trim() !== '' && link.url.trim() !== '');
 
@@ -55,7 +59,8 @@ export default function LinksPage() {
         }
 
         startTransition(async () => {
-            const result = await saveLinks(linksToSave);
+            // Call the imported Server Action
+            const result = await saveLinks(linksToSave); 
             if (result.success) {
                 setSuccess(result.message);
                 const savedLinks = result.data || [];
@@ -75,7 +80,7 @@ export default function LinksPage() {
     return (
         <div className="max-w-4xl mx-auto">
             <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-100">Manage Your Links</h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">Add or edit the links that appear on your public profile.</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">Add, edit, or remove the links that appear on your public profile. Clear both fields to remove a link.</p>
 
             {error && <p className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-md">{error}</p>}
             {success && <p className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300 rounded-md">{success}</p>}

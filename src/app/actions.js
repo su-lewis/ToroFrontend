@@ -5,48 +5,36 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';
+import { fetchProtectedDataFromServer } from '@/lib/server-api';
 
-// --- FIX: Import the CORRECTLY NAMED function from your server-api.js file ---
-import { fetchProtectedDataFromServer } from '@/lib/server-api'; 
-
-// SERVER ACTION 1: Update User Profile
+// --- USER PROFILE ACTIONS ---
 export async function updateProfile(formData) {
-  const profileData = {
-    // Get all fields from the FormData object
-    username: formData.get('username'),
-    displayName: formData.get('displayName'),
-    bio: formData.get('bio'),
-    profileImageUrl: formData.get('profileImageUrl'),
-    bannerImageUrl: formData.get('bannerImageUrl'),
-    profileBackgroundColor: formData.get('profileBackgroundColor'),
-  };
-
   try {
-    // --- FIX: Call the CORRECTLY NAMED function ---
-    // The path '/users/profile' is relative to your API base URL.
+    const profileData = {
+      username: formData.get('username'),
+      displayName: formData.get('displayName'),
+      bio: formData.get('bio'),
+      profileImageUrl: formData.get('profileImageUrl'),
+      bannerImageUrl: formData.get('bannerImageUrl'),
+      profileBackgroundColor: formData.get('profileBackgroundColor'),
+    };
     await fetchProtectedDataFromServer('/users/profile', { 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }, 
       body: JSON.stringify(profileData),
     });
-
-    // Revalidate paths to show updated data immediately on navigation
-    revalidatePath('/dashboard');
     revalidatePath('/dashboard/profile');
     if (profileData.username) {
         revalidatePath(`/${profileData.username}`);
     }
-
     return { success: true, message: 'Profile updated successfully!' };
   } catch (error) {
     console.error("Error in updateProfile action:", error);
-    // Use error.bodyText or error.message for better error reporting from our fetch helper
     return { success: false, message: error.bodyText || error.message || 'An unknown error occurred while saving.' };
   }
 }
 
-
-// SERVER ACTION 2: Handle User Logout
+// --- AUTH ACTIONS ---
 export async function handleLogout() {
   const cookieStore = cookies();
   const supabase = createServerClient(
@@ -60,12 +48,127 @@ export async function handleLogout() {
       },
     }
   );
-  
   await supabase.auth.signOut();
-  
-  // Revalidate the root layout to ensure user-specific data is cleared server-side
-  revalidatePath('/', 'layout'); 
-  
-  // Redirect to the login page
+  revalidatePath('/', 'layout');
   redirect('/login');
+}
+
+// --- STRIPE & PAYMENT ACTIONS ---
+export async function createCheckoutSession(formData) {
+  try {
+    const tipData = {
+      amount: parseFloat(formData.get('amount')),
+      recipientUsername: formData.get('recipientUsername'),
+      donorName: formData.get('donorName'),
+    };
+    if (isNaN(tipData.amount) || !tipData.recipientUsername) {
+      return { success: false, message: 'Invalid data provided for tip.' };
+    }
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const url = `${apiBaseUrl}/stripe/create-checkout-session`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tipData),
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Failed to create checkout session.' }));
+      return { success: false, message: errorData.message || 'Could not initiate payment.' };
+    }
+    const session = await response.json();
+    if (!session.id) {
+      return { success: false, message: 'Invalid session data received from server.' };
+    }
+    return { success: true, sessionId: session.id };
+  } catch (error) {
+    console.error("Error in createCheckoutSession action:", error);
+    return { success: false, message: 'An unexpected server error occurred.' };
+  }
+}
+
+export async function getStripeStatus() {
+    try {
+        const status = await fetchProtectedDataFromServer('/stripe/connect/account-status');
+        return { success: true, data: status };
+    } catch (error) {
+        if (error.status === 404) {
+            return { success: true, data: null }; 
+        }
+        return { success: false, message: error.bodyText || error.message || "Failed to get Stripe status." };
+    }
+}
+
+export async function createStripeOnboardLink() {
+    try {
+        const response = await fetchProtectedDataFromServer('/stripe/connect/onboard-user', {
+            method: 'POST',
+        });
+        if (response.url) {
+            return { success: true, url: response.url };
+        } else {
+            throw new Error("Onboarding URL not found in API response.");
+        }
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || 'Failed to start Stripe connection.' };
+    }
+}
+
+export async function createStripeDashboardLink() {
+    try {
+        const response = await fetchProtectedDataFromServer('/stripe/create-express-dashboard-link', {
+            method: 'POST',
+        });
+        if (response.url) {
+            return { success: true, url: response.url };
+        } else {
+            throw new Error("Dashboard URL not found in API response.");
+        }
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || 'Could not open Stripe dashboard.' };
+    }
+}
+
+// --- LINK ACTIONS ---
+export async function getLinks() {
+    try {
+        const links = await fetchProtectedDataFromServer('/links');
+        return { success: true, data: links };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to fetch links." };
+    }
+}
+
+export async function saveLinks(linksToSave) {
+    try {
+        const response = await fetchProtectedDataFromServer('/links/bulk-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ links: linksToSave }),
+        });
+        revalidatePath('/dashboard/links');
+        revalidatePath('/', 'layout');
+        return { success: true, data: response, message: 'Links saved successfully!' };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || 'Failed to save links.' };
+    }
+}
+
+// --- PAYMENT ANALYTICS ACTIONS ---
+export async function getPaymentStats() {
+    try {
+        const stats = await fetchProtectedDataFromServer('/payments/stats');
+        return { success: true, data: stats };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to fetch payment stats." };
+    }
+}
+
+export async function getPaymentHistory() {
+    try {
+        const history = await fetchProtectedDataFromServer('/payments/history');
+        return { success: true, data: history };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to fetch payment history." };
+    }
 }
