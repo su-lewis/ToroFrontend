@@ -10,6 +10,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
 export default function SendTipButton({ recipientUsername, recipientDisplayName }) {
   const MINIMUM_TIP_AMOUNT = 5;
+  const MAXIMUM_TIP_AMOUNT = 1111;
   const [amount, setAmount] = useState(MINIMUM_TIP_AMOUNT.toString());
   const [donorName, setDonorName] = useState('');
   const [error, setError] = useState(null);
@@ -31,6 +32,10 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   const handleTip = async (formData) => {
     if (isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT) {
       setError(`Please enter a valid amount for the creator (min $${MINIMUM_TIP_AMOUNT.toFixed(2)} or equivalent).`);
+      return;
+    }
+    if (creatorAmountNum > MAXIMUM_TIP_AMOUNT) {
+      setError(`Amount cannot exceed $${MAXIMUM_TIP_AMOUNT.toFixed(2)}.`);
       return;
     }
     setError(null);
@@ -75,11 +80,12 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
           value={amount}
           onChange={(e) => {
             const val = e.target.value;
-            if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) {
+            if (val === "" || (/^\d*\.?\d{0,2}$/.test(val) && parseFloat(val) <= MAXIMUM_TIP_AMOUNT)) {
                 setAmount(val);
             }
           }}
           min={MINIMUM_TIP_AMOUNT.toFixed(2)}
+          max={MAXIMUM_TIP_AMOUNT.toFixed(2)}
           className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-2xl font-semibold text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm"
           placeholder={MINIMUM_TIP_AMOUNT.toFixed(2)}
         />
@@ -113,7 +119,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
 
       <button
         type="submit"
-        disabled={isPending || isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT}
+        disabled={isPending || isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT || creatorAmountNum > MAXIMUM_TIP_AMOUNT}
         className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
       >
         {isPending ? 'Processing...' : `Pay $${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}
