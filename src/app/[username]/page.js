@@ -2,6 +2,7 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import SendTipButton from '@/components/SendTipButton';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 // Data fetching function (no changes needed)
 async function getPublicProfileData(username) {
@@ -54,6 +55,11 @@ export default async function PublicProfilePage({ params, searchParams }) {
         </div>
 
         <div className="w-full max-w-2xl bg-white dark:bg-gray-800 p-6 md:p-8 shadow-xl relative z-10 -mt-16 md:-mt-20 rounded-lg mx-4 sm:mx-0">
+          {/* Theme Switcher in top left corner */}
+          <div className="absolute top-3 left-3">
+            <ThemeSwitcher />
+          </div>
+          
           <div className="flex justify-center -mt-20 md:-mt-24 mb-4">
             {profileImageUrl ? (
               <Image src={profileImageUrl} alt={`Profile picture of ${displayName}`} width={160} height={160} className="rounded-full w-32 h-32 md:w-40 md:h-40 object-cover border-4 border-white dark:border-gray-700 shadow-2xl bg-gray-200" priority />

@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { createCheckoutSession } from '@/app/actions'; // Using Server Action
 import { loadStripe } from '@stripe/stripe-js';
 import { useTransition } from 'react'; // For Server Action loading state
-import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
@@ -56,13 +55,8 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   };
 
   return (
-    // Added dark mode classes to the main container with relative positioning for the theme switcher
-    <form action={handleTip} className="relative bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
-      {/* Theme Switcher in top left corner, visible */}
-      <div className="absolute top-2 left-2">
-        <ThemeSwitcher />
-      </div>
-      
+    // Added dark mode classes to the main container
+    <form action={handleTip} className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
       <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100 text-center">
         Send a Tip to {recipientDisplayName || recipientUsername}
       </h3>
