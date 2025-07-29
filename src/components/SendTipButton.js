@@ -1,46 +1,39 @@
 // frontend/src/components/SendTipButton.js
 'use client';
 
-import { useState, useTransition } from 'react';
-import { createCheckoutSession } from '@/app/actions';
+import { useState } from 'react';
+import { createCheckoutSession } from '@/app/actions'; // Using Server Action
 import { loadStripe } from '@stripe/stripe-js';
+import { useTransition } from 'react'; // For Server Action loading state
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function SendTipButton({ recipientUsername, recipientDisplayName }) {
-  const MINIMUM_TIP_AMOUNT = 1.00; // Minimum amount creator can receive
-  const MAXIMUM_TIP_AMOUNT = 11111.00; // Maximum amount creator can receive
-
-  const [amount, setAmount] = useState('10');
+  const MINIMUM_TIP_AMOUNT = 5;
+  const [amount, setAmount] = useState(MINIMUM_TIP_AMOUNT.toString());
   const [donorName, setDonorName] = useState('');
   const [error, setError] = useState(null);
   const [isPending, startTransition] = useTransition();
 
   const platformFeePercentage = 0.15;
-  const stripeFeePercentage = 0.029;
-  const stripeFeeFixedDollars = 0.30;
-  
+
+  // Calculation for the simple "add-on" fee model for display
   const calculateTotalDonorPays = (creatorAmount) => {
-    if (isNaN(creatorAmount) || creatorAmount <= 0) return { total: 0 };
-    const total = (creatorAmount + stripeFeeFixedDollars) / (1 - platformFeePercentage - stripeFeePercentage);
-    return { total };
+    if (isNaN(creatorAmount) || creatorAmount <= 0) return { total: 0, fee: 0 };
+    const fee = creatorAmount * platformFeePercentage;
+    const total = creatorAmount + fee;
+    return { total, fee };
   };
 
   const creatorAmountNum = parseFloat(amount);
-  const { total: totalDonorPaysNum } = calculateTotalDonorPays(creatorAmountNum);
-  const platformFeeNum = totalDonorPaysNum - creatorAmountNum;
+  const { total: totalDonorPaysNum, fee: platformFeeNum } = calculateTotalDonorPays(creatorAmountNum);
 
-  const handleTipSubmit = async (formData) => {
-    setError(null);
+  const handleTip = async (formData) => {
     if (isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT) {
-      setError(`Minimum tip is $${MINIMUM_TIP_AMOUNT.toFixed(2)}.`);
+      setError(`Please enter a valid amount for the creator (min $${MINIMUM_TIP_AMOUNT.toFixed(2)} or equivalent).`);
       return;
     }
-    // --- NEW: Add maximum amount check ---
-    if (creatorAmountNum > MAXIMUM_TIP_AMOUNT) {
-      setError(`Maximum tip amount is $${MAXIMUM_TIP_AMOUNT.toFixed(2)}.`);
-      return;
-    }
+    setError(null);
     
     startTransition(async () => {
       const result = await createCheckoutSession(formData);
@@ -50,53 +43,55 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       }
       const sessionId = result.sessionId;
       const stripe = await stripePromise;
-      if (!stripe) { setError('Stripe.js failed to load.'); return; }
-      
+      if (!stripe) {
+        setError('Stripe.js has not loaded yet.');
+        return;
+      }
       const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
-      if (stripeError) { setError(stripeError.message); }
+      if (stripeError) {
+        setError(stripeError.message || "Could not redirect to Stripe.");
+      }
     });
   };
 
   return (
-    <form action={handleTipSubmit} className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
-      <h3 className="text-xl font-bold mb-4 text-center text-gray-800 dark:text-gray-100">
+    // Added dark mode classes to the main container
+    <form action={handleTip} className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
+      <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100 text-center">
         Send a Tip to {recipientDisplayName || recipientUsername}
       </h3>
       
       {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4 p-2 bg-red-100 dark:bg-red-900/30 rounded-md text-center">{error}</p>}
       
+      {/* Hidden inputs to pass data to the Server Action */}
       <input type="hidden" name="amount" value={amount} />
       <input type="hidden" name="recipientUsername" value={recipientUsername} />
 
       <div className="flex items-center justify-center space-x-2 mb-4">
         <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">$</span>
+        {/* Input is forced light theme as requested */}
         <input
           type="text"
           value={amount}
           onChange={(e) => {
             const val = e.target.value;
-            // --- NEW: Prevent typing a value larger than the max ---
-            if (val === "" || (/^\d*\.?\d{0,2}$/.test(val) && parseFloat(val) <= MAXIMUM_TIP_AMOUNT)) {
+            if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) {
                 setAmount(val);
-            } else if (parseFloat(val) > MAXIMUM_TIP_AMOUNT) {
-                // If they paste a larger number, set it to the max
-                setAmount(MAXIMUM_TIP_AMOUNT.toString());
             }
           }}
           min={MINIMUM_TIP_AMOUNT.toFixed(2)}
-          max={MAXIMUM_TIP_AMOUNT.toFixed(2)} // HTML5 validation attribute
           className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-center text-2xl font-semibold text-black bg-white shadow-sm"
-          placeholder="10.00"
+          placeholder={MINIMUM_TIP_AMOUNT.toFixed(2)}
         />
       </div>
       
       {creatorAmountNum > 0 && (
-        <div className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4 py-3 space-y-2">
+        <div className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4 py-3">
             <div className="flex justify-between items-center px-2">
                 <span>Platform & Stripe Fee:</span>
                 <span className="font-semibold">+ ${platformFeeNum.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center px-2 pt-2">
+            <div className="flex justify-between items-center px-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                 <span className="font-bold">Total You Pay:</span>
                 <span className="font-bold">${totalDonorPaysNum.toFixed(2)}</span>
             </div>
@@ -104,18 +99,21 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       )}
 
       <div className="mb-4 flex flex-col items-center">
+        {/* Input is forced light theme as requested */}
         <input
           id="donorName"
-          name="donorName"
+          name="donorName" // 'name' attribute is crucial for FormData
+          value={donorName}
+          onChange={(e) => setDonorName(e.target.value)}
           placeholder="Anonymous"
-          maxLength="40"
-          className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-lg text-black bg-white text-center"
+          maxLength="18"
+          className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-lg text-black bg-white shadow-sm text-center"
         />
       </div>
 
       <button
         type="submit"
-        disabled={isPending || isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT || creatorAmountNum > MAXIMUM_TIP_AMOUNT}
+        disabled={isPending || isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT}
         className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
       >
         {isPending ? 'Processing...' : `Pay $${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}

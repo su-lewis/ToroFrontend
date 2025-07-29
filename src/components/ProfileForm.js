@@ -145,8 +145,8 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   }
 
   return (
-    <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
+    <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white text-center">
         {profile && profile.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
       {error && <p className="text-red-500 mb-4 p-3 bg-red-100 rounded text-sm text-center">{error}</p>}
@@ -155,34 +155,34 @@ export default function ProfileForm({ initialData: profile, serverError }) {
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
         {/* Banner Image Upload Section */}
         <div className="space-y-2">
-          <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
+          <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
           {displayBanner ? (
-            <div className="w-full aspect-[3/1] relative rounded-lg overflow-hidden border border-gray-300 bg-gray-100">
+            <div className="w-full aspect-[3/1] relative rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
               <Image src={displayBanner} alt="Banner Preview" fill={true} className="object-cover" key={displayBanner} />
             </div>
           ) : (
-            <div className="w-full aspect-[3/1] bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 border border-dashed border-gray-300">
+            <div className="w-full aspect-[3/1] bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-300 border border-dashed border-gray-300 dark:border-gray-600">
               <span>No banner uploaded</span>
             </div>
           )}
           <input type="file" id="bannerUploadInput" name="bannerFile" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'banner')} className="hidden" ref={bannerFileInputRef} />
-          <button id="bannerUploadButton" type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+          <button id="bannerUploadButton" type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
             {uploading ? 'Uploading...' : (bannerUrl || bannerPreview ? 'Change Banner' : 'Upload Banner')}
           </button>
         </div>
 
         {/* Avatar Upload Section */}
         <div className="flex flex-col items-center space-y-3">
-          <label htmlFor="avatarUploadButton" className="block text-sm font-medium text-gray-700 self-start">Profile Picture</label>
+          <label htmlFor="avatarUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300 self-start">Profile Picture</label>
           {displayAvatar ? (
-            <Image src={displayAvatar} alt="Profile Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" onError={() => {setAvatarUrl(null); setAvatarPreview(null);}} key={displayAvatar} />
+            <Image src={displayAvatar} alt="Profile Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600 shadow-sm" onError={() => {setAvatarUrl(null); setAvatarPreview(null);}} key={displayAvatar} />
           ) : ( 
-            <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl border-2 border-gray-300 shadow-sm"> 
+            <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-400 dark:text-gray-300 text-4xl border-2 border-gray-300 dark:border-gray-600 shadow-sm"> 
               {displayName ? displayName.charAt(0).toUpperCase() : (username ? username.charAt(0).toUpperCase() : '?')} 
             </div> 
           )}
           <input type="file" id="avatarUploadInput" name="avatarFile" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" ref={avatarFileInputRef} />
-          <button id="avatarUploadButton" type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"> 
+          <button id="avatarUploadButton" type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"> 
             {uploading ? 'Uploading...' : (avatarUrl || avatarPreview ? 'Change Avatar' : 'Upload Avatar')}
           </button>
         </div>
@@ -190,7 +190,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
         {/* Text Fields and Color Picker */}
         <div className="space-y-6">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
               <input 
                 type="text" 
                 id="username" 
@@ -202,38 +202,38 @@ export default function ProfileForm({ initialData: profile, serverError }) {
                 maxLength="20" 
                 pattern="^[a-zA-Z0-9_.-]+$" 
                 title="3-20 chars. Letters, numbers, _, ., -." 
-                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" 
+                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" 
               />
             </div>
             
             <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label>
+              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Display Name</label>
               <input 
                 type="text" 
                 id="displayName" 
                 name="displayName"
                 value={displayName} 
                 onChange={(e) => setDisplayName(e.target.value)} 
-                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" 
+                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" 
               />
             </div>
             
             <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
+              <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
               <textarea 
                 id="bio" 
                 name="bio"
                 value={bio} 
                 onChange={(e) => setBio(e.target.value)} 
                 rows="4" 
-                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" 
+                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" 
                 placeholder="A little about yourself..."
               ></textarea>
             </div>
         
             {/* Color picker section */}
             <div>
-              <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700">Profile Background Color</label>
+              <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Background Color</label>
               <div className="mt-1 flex items-center gap-4">
                 <input 
                   type="color" 
@@ -241,13 +241,13 @@ export default function ProfileForm({ initialData: profile, serverError }) {
                   name="profileBackgroundColor"
                   value={bgColor}
                   onChange={(e) => setBgColor(e.target.value)}
-                  className="w-14 h-10 p-1 border border-gray-300 rounded-md cursor-pointer"
+                  className="w-14 h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer"
                 />
                 <input 
                   type="text"
                   value={bgColor}
                   readOnly
-                  className="w-28 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-600 bg-gray-50 focus:ring-0 focus:border-gray-300"
+                  className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 focus:ring-0 focus:border-gray-300"
                 />
               </div>
             </div>
