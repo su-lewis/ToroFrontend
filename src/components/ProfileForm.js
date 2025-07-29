@@ -110,7 +110,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const displayBanner = bannerPreview || bannerUrl;
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 md:p-12 rounded-xl shadow-lg w-full">
+    <div className="bg-white dark:bg-gray-800 p-8 md:p-16 rounded-xl shadow-lg max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 text-center">
         {profile?.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
@@ -138,7 +138,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
             className="hidden" 
             ref={bannerFileInputRef} 
           />
-          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50">
+          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50">
             {uploading ? 'Uploading...' : 'Change Banner'}
           </button>
         </div>
@@ -161,7 +161,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
             className="hidden" 
             ref={avatarFileInputRef} 
           />
-          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"> 
+          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"> 
             {uploading ? 'Uploading...' : 'Change Avatar'}
           </button>
         </div>
@@ -170,15 +170,15 @@ export default function ProfileForm({ initialData: profile, serverError }) {
         <div className="space-y-6">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
-            <input type="text" name="username" id="username" defaultValue={profile?.username || ''} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" />
+            <input type="text" name="username" id="username" defaultValue={profile?.username || ''} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-black dark:text-gray-300 bg-white dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
             <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Display Name</label>
-            <input type="text" name="displayName" id="displayName" defaultValue={profile?.displayName || ''} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" />
+            <input type="text" name="displayName" id="displayName" defaultValue={profile?.displayName || ''} className="mt-1 block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-black dark:text-gray-300 bg-white dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
             <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
-            <textarea name="bio" id="bio" defaultValue={profile?.bio || ''} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea>
+            <textarea name="bio" id="bio" defaultValue={profile?.bio || ''} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-black dark:text-gray-300 bg-white dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea>
           </div>
           
           {/* Profile Background Color */}
@@ -196,7 +196,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
                 type="text"
                 defaultValue={profile?.profileBackgroundColor || '#FFFFFF'}
                 readOnly
-                className="w-28 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-600 bg-gray-50 focus:ring-0 focus:border-gray-300"
+                className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 focus:ring-0 focus:border-gray-300"
               />
             </div>
           </div>
