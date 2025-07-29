@@ -84,7 +84,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const displayBanner = bannerPreview || bannerUrl;
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
+    <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 text-center">
         {profile?.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
@@ -105,7 +105,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
             </div>
           )}
           <input type="file" name="bannerFile" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'banner')} className="hidden" ref={bannerFileInputRef} />
-          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50">
             {uploading ? 'Uploading...' : 'Change Banner'}
           </button>
         </div>
@@ -121,7 +121,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
             </div> 
           )}
           <input type="file" name="avatarFile" accept="image/png, image/jpeg, image/gif, image/webp" onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" ref={avatarFileInputRef} />
-          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"> 
+          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"> 
             {uploading ? 'Uploading...' : 'Change Avatar'}
           </button>
         </div>
