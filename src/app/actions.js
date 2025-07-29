@@ -30,7 +30,7 @@ export async function updateProfile(formData) {
     return { success: true, message: 'Profile updated successfully!' };
   } catch (error) {
     console.error("Error in updateProfile action:", error);
-    return { success: false, message: error.bodyText || error.message || 'An unknown error occurred while saving.' };
+    return { success: false, message: error.bodyText || error.message || 'An unknown error occurred.' };
   }
 }
 
@@ -62,7 +62,7 @@ export async function createCheckoutSession(formData) {
       donorName: formData.get('donorName'),
     };
     if (isNaN(tipData.amount) || !tipData.recipientUsername) {
-      return { success: false, message: 'Invalid data provided for tip.' };
+      return { success: false, message: 'Invalid data provided.' };
     }
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     const url = `${apiBaseUrl}/stripe/create-checkout-session`;
@@ -73,13 +73,10 @@ export async function createCheckoutSession(formData) {
       cache: 'no-store',
     });
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Failed to create checkout session.' }));
+      const errorData = await response.json().catch(() => ({}));
       return { success: false, message: errorData.message || 'Could not initiate payment.' };
     }
     const session = await response.json();
-    if (!session.id) {
-      return { success: false, message: 'Invalid session data received from server.' };
-    }
     return { success: true, sessionId: session.id };
   } catch (error) {
     console.error("Error in createCheckoutSession action:", error);
