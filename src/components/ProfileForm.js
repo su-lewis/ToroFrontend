@@ -10,36 +10,21 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const [error, setError] = useState(serverError?.message || '');
   const [success, setSuccess] = useState('');
   const [isPending, startTransition] = useTransition();
-  const [uploading, setUploading] = useState(false);
   
-  // State for form fields, controlled to sync color picker and text input
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
-  const [profileBackgroundColor, setProfileBackgroundColor] = useState('#FFFFFF');
-
-  // State for image URLs and previews
+  const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.profileImageUrl || null);
   const [bannerUrl, setBannerUrl] = useState(profile?.bannerImageUrl || null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
-  
   const formRef = useRef(null);
-  const avatarInputRef = useRef(null);
-  const bannerInputRef = useRef(null);
-  
-  useEffect(() => {
-    // Populate state from initial server-fetched data
-    if (profile) {
-      setUsername(profile.username || '');
-      setDisplayName(profile.displayName || '');
-      setBio(profile.bio || '');
-      setAvatarUrl(profile.profileImageUrl || null);
-      setBannerUrl(profile.bannerImageUrl || null);
-      setProfileBackgroundColor(profile.profileBackgroundColor || '#0D1117'); // Default to a dark color
-    }
-  }, [profile]);
+  const avatarInputRef = useRef(null); // Ref for avatar input
+  const bannerInputRef = useRef(null); // Ref for banner input
 
+  useEffect(() => {
+    setAvatarUrl(profile?.profileImageUrl || null);
+    setBannerUrl(profile?.bannerImageUrl || null);
+  }, [profile]);
+  
   const handleFileChange = (e, type) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -81,13 +66,9 @@ export default function ProfileForm({ initialData: profile, serverError }) {
         setUploading(false);
     }
     
-    const actionFormData = new FormData();
-    actionFormData.append('username', username);
-    actionFormData.append('displayName', displayName);
-    actionFormData.append('bio', bio);
-    actionFormData.append('profileBackgroundColor', profileBackgroundColor);
-    actionFormData.append('profileImageUrl', finalAvatarUrl || '');
-    actionFormData.append('bannerImageUrl', finalBannerUrl || '');
+    const actionFormData = new FormData(formRef.current);
+    actionFormData.set('profileImageUrl', finalAvatarUrl || '');
+    actionFormData.set('bannerImageUrl', finalBannerUrl || '');
     
     startTransition(async () => {
       const result = await updateProfile(actionFormData);
@@ -101,81 +82,83 @@ export default function ProfileForm({ initialData: profile, serverError }) {
     });
   }
 
-  const displayAvatar = avatarPreview || avatarUrl;
-  const displayBanner = bannerPreview || bannerUrl;
-
   return (
-    // Form container with the dark background from your screenshot
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl w-full mx-auto bg-[#161b22] border border-gray-700 text-white p-8 rounded-xl">
-      <h2 className="text-2xl font-bold text-center text-gray-100">
-        Edit Your Profile
-      </h2>
-      {error && <div className="p-3 text-center bg-red-900/50 border border-red-700 text-red-300 rounded-md">{error}</div>}
-      {success && <div className="p-3 text-center bg-green-900/50 border border-green-700 text-green-300 rounded-md">{success}</div>}
+    // RESTORED max-w-2xl for slimmer layout
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 max-w-2xl bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+        {error && <div className="p-3 text-center bg-red-100 text-red-700 rounded-md">{error}</div>}
+        {success && <div className="p-3 text-center bg-green-100 text-green-700 rounded-md">{success}</div>}
       
-      {/* Banner Upload UI */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-300">Banner Image (Recommended: 1200x400)</label>
-        <div className="w-full aspect-[3/1] rounded-lg bg-gray-700/50 relative flex items-center justify-center border border-dashed border-gray-600">
-          {displayBanner && <Image src={displayBanner} alt="Banner Preview" layout="fill" className="object-cover rounded-lg" />}
+        {/* Banner Upload UI */}
+        <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Image</label>
+            <div className="w-full aspect-[3/1] rounded-lg bg-gray-100 dark:bg-gray-700 relative flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                {(bannerPreview || bannerUrl) && <Image src={bannerPreview || bannerUrl} alt="Banner Preview" layout="fill" className="object-cover rounded-lg" />}
+                {/* We use the button to trigger the hidden input */}
+                <input type="file" name="bannerFile" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} accept="image/*" className="hidden" />
+                <button type="button" onClick={() => bannerInputRef.current?.click()} className="z-10 bg-white/70 dark:bg-black/50 hover:bg-opacity-90 dark:hover:bg-opacity-70 text-black dark:text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all">
+                  Change Banner
+                </button>
+            </div>
         </div>
-        <input type="file" name="bannerFile" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} accept="image/*" className="hidden" />
-        <button type="button" onClick={() => bannerInputRef.current?.click()} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-md text-sm font-medium text-gray-300">
-            {uploading ? 'Uploading...' : 'Change Banner'}
-        </button>
-      </div>
       
-      {/* Avatar Upload UI */}
-      <div className="flex flex-col items-center space-y-3">
-          <label className="block text-sm font-medium text-gray-300 self-center">Profile Picture</label>
-          <div className="relative w-32 h-32">
-              {displayAvatar ? (
-              <Image src={displayAvatar} alt="Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-600 shadow-sm" />
-              ) : ( <div className="w-32 h-32 rounded-full bg-gray-700 flex items-center justify-center text-gray-500 text-4xl border-2 border-gray-600 shadow-sm">?</div> )}
-          </div>
-           <button type="button" onClick={() => avatarInputRef.current?.click()} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-md text-sm font-medium text-gray-300">
-              {uploading ? 'Uploading...' : 'Change Avatar'}
+        {/* Avatar Upload UI */}
+        <div className="flex flex-col items-center">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Picture</label>
+            <div className="relative w-32 h-32">
+                {(avatarPreview || avatarUrl) ? (
+                <Image src={avatarPreview || avatarUrl} alt="Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" />
+                ) : ( <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl border-2 border-gray-300 shadow-sm">?</div> )}
+            </div>
+            {/* We use the button to trigger the hidden input */}
+            <input type="file" name="avatarFile" id="avatarFile" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} accept="image/*" className="hidden" />
+            <button type="button" onClick={() => avatarInputRef.current?.click()} className="mt-3 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-800 dark:text-gray-200">
+              Change Avatar
             </button>
-          <input type="file" name="avatarFile" id="avatarFile" onChange={(e) => handleFileChange(e, 'avatar')} accept="image/*" className="hidden" />
-      </div>
+        </div>
 
-      {/* Text Fields and Color Picker */}
-      <div className="space-y-6">
+        {/* RESTORED original layout for text fields */}
         <div>
-          <label htmlFor="username" className="block text-sm font-medium text-gray-300">Username</label>
-          <input type="text" name="username" id="username" value={username} onChange={(e) => setUsername(e.target.value)} required 
-                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black bg-white" />
+          <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Background Color</label>
+          <input type="color" name="profileBackgroundColor" id="bgColor" defaultValue={profile?.profileBackgroundColor || '#FFFFFF'} className="mt-1 w-full h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer"/>
         </div>
         <div>
-          <label htmlFor="displayName" className="block text-sm font-medium text-gray-300">Display Name</label>
-          <input type="text" name="displayName" id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} 
-                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black bg-white" />
-        </div>
-        <div>
-          <label htmlFor="bio" className="block text-sm font-medium text-gray-300">Bio</label>
-          <textarea name="bio" id="bio" rows="3" value={bio} onChange={(e) => setBio(e.target.value)} 
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black bg-white"></textarea>
-        </div>
-        <div>
-          <label htmlFor="bgColor" className="block text-sm font-medium text-gray-300">Profile Background Color</label>
-          <div className="mt-1 flex items-center gap-4">
-            <input type="color" name="profileBackgroundColor" id="bgColor" value={profileBackgroundColor} onChange={(e) => setProfileBackgroundColor(e.target.value)} 
-                   className="w-12 h-10 p-1 border-gray-600 rounded-md cursor-pointer"/>
-            <input type="text" value={profileBackgroundColor} onChange={(e) => setProfileBackgroundColor(e.target.value)}
-                   className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm text-black bg-white"/>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+          <div className="mt-1 flex rounded-md shadow-sm">
+            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
+              your-page.com/
+            </span>
+            <input
+              type="text" name="username" id="username" defaultValue={profile?.username || ''} required
+              className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300 text-black bg-white"
+              placeholder="your-unique-username"
+            />
           </div>
         </div>
-      </div>
-      
-      <div>
-        <button
-          type="submit"
-          disabled={isPending || uploading}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400/50"
-        >
-          {(isPending || uploading) ? 'Saving...' : 'Save Profile'}
-        </button>
-      </div>
+        <div>
+          <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Display Name</label>
+          <input
+            type="text" name="displayName" id="displayName" defaultValue={profile?.displayName || ''}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black bg-white"
+            placeholder="Your Full Name"
+          />
+        </div>
+        <div>
+          <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
+          <textarea
+            name="bio" id="bio" rows="3" defaultValue={profile?.bio || ''}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black bg-white"
+            placeholder="A short description about yourself."
+          ></textarea>
+        </div>
+
+        <div>
+          <button
+            type="submit" disabled={isPending || uploading}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+          >
+            {(isPending || uploading) ? 'Saving...' : 'Save Profile'}
+          </button>
+        </div>
     </form>
   );
 }
