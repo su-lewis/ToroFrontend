@@ -211,3 +211,17 @@ export async function getUserSettings() {
         };
     }
 }
+
+// --- ADD THIS NEW ACTION for fetching the Stripe balance ---
+export async function getStripeBalance() {
+    try {
+        const balance = await fetchProtectedDataFromServer('/stripe/balance');
+        return { success: true, data: balance };
+    } catch (error) {
+        // A 404 here is expected if the user isn't fully onboarded, not a hard error.
+        if (error.status === 404) {
+            return { success: true, data: null }; // Return null to indicate no balance to show
+        }
+        return { success: false, message: error.bodyText || error.message || "Failed to fetch Stripe balance." };
+    }
+}
