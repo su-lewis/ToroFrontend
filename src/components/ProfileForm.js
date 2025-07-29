@@ -110,7 +110,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const displayBanner = bannerPreview || bannerUrl;
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-8 md:p-16 rounded-xl shadow-lg w-full">
+    <div className="bg-white dark:bg-gray-800 p-6 md:p-12 rounded-xl shadow-lg w-full">
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 text-center">
         {profile?.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
