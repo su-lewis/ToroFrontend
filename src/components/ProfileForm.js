@@ -110,7 +110,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const displayBanner = bannerPreview || bannerUrl;
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-8 md:p-16 rounded-xl shadow-lg max-w-6xl mx-auto">
+    <div className="bg-white dark:bg-gray-800 p-8 md:p-16 rounded-xl shadow-lg max-w-8xl mx-auto">
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 text-center">
         {profile?.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
@@ -138,7 +138,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
             className="hidden" 
             ref={bannerFileInputRef} 
           />
-          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50">
+          <button type="button" onClick={() => bannerFileInputRef.current?.click()} disabled={uploading} className="mt-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50">
             {uploading ? 'Uploading...' : 'Change Banner'}
           </button>
         </div>
@@ -161,7 +161,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
             className="hidden" 
             ref={avatarFileInputRef} 
           />
-          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"> 
+          <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={uploading} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"> 
             {uploading ? 'Uploading...' : 'Change Avatar'}
           </button>
         </div>
