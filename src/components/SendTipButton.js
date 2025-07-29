@@ -69,7 +69,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
 
       <div className="flex items-center justify-center space-x-2 mb-4">
         <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">$</span>
-        {/* Input is forced light theme as requested */}
+        {/* Input with dark mode background */}
         <input
           type="text"
           value={amount}
@@ -80,7 +80,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
             }
           }}
           min={MINIMUM_TIP_AMOUNT.toFixed(2)}
-          className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-center text-2xl font-semibold text-black bg-white shadow-sm"
+          className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-2xl font-semibold text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm"
           placeholder={MINIMUM_TIP_AMOUNT.toFixed(2)}
         />
       </div>
@@ -99,7 +99,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       )}
 
       <div className="mb-4 flex flex-col items-center">
-        {/* Input is forced light theme as requested */}
+        {/* Input with dark mode background */}
         <input
           id="donorName"
           name="donorName" // 'name' attribute is crucial for FormData
@@ -107,7 +107,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
           onChange={(e) => setDonorName(e.target.value)}
           placeholder="Anonymous"
           maxLength="18"
-          className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-lg text-black bg-white shadow-sm text-center"
+          className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-lg text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm text-center"
         />
       </div>
 

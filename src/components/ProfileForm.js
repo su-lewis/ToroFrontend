@@ -122,7 +122,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
         <div className="space-y-2">
           <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
           {displayBanner ? (
-            <div className="w-full aspect-[3/1] relative rounded-lg overflow-hidden border border-gray-300 bg-gray-100">
+            <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
               <Image src={displayBanner} alt="Banner Preview" fill={true} className="object-cover" key={displayBanner} />
             </div>
           ) : (
@@ -147,7 +147,9 @@ export default function ProfileForm({ initialData: profile, serverError }) {
         <div className="flex flex-col items-center space-y-3">
           <label htmlFor="avatarUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300 self-start">Profile Picture</label>
           {displayAvatar ? (
-            <Image src={displayAvatar} alt="Profile Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" key={displayAvatar} />
+            <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
+              <Image src={displayAvatar} alt="Profile Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" key={displayAvatar} />
+            </div>
           ) : ( 
             <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl border-2 border-gray-300 shadow-sm">
               {profile?.displayName ? profile.displayName.charAt(0).toUpperCase() : (profile?.username ? profile.username.charAt(0).toUpperCase() : '?')}
