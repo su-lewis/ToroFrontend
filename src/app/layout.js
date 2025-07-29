@@ -1,6 +1,7 @@
 // frontend/src/app/layout.js
 import './globals.css';
 import { Inter } from 'next/font/google'; // Or your chosen font
+import { AppThemeProvider } from '@/components/ThemeProvider'; // Import the new provider
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -31,12 +32,16 @@ export const metadata = {
   // },
 };
 // --- END OF METADATA ---
-
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-gray-100 text-gray-900`}>
-        <main>{children}</main>
+    <html lang="en" suppressHydrationWarning> {/* Add suppressHydrationWarning */}
+      <body className={`${inter.className}`}>
+        <AppThemeProvider>
+          {/* Main content is now a child of the theme provider */}
+          <main className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+            {children}
+          </main>
+        </AppThemeProvider>
       </body>
     </html>
   );
