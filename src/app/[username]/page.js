@@ -31,12 +31,10 @@ export default async function PublicProfilePage({ params, searchParams }) {
   const {
     displayName = username, bio = "", profileImageUrl, bannerImageUrl,
     links = [], stripeAccountId, stripeOnboardingComplete,
-    profileBackgroundColor = '#F3F4F6' // Default to a light gray if not set
+    profileBackgroundColor = '#F3F4F6'
   } = profileData;
 
   const pageStyle = { backgroundColor: profileBackgroundColor };
-
-  // Helper function to determine if the user-selected background is dark
   const isBgDark = () => {
     if (!profileBackgroundColor) return false;
     const color = profileBackgroundColor.substring(1);
@@ -48,16 +46,13 @@ export default async function PublicProfilePage({ params, searchParams }) {
   const subTextColorClass = isBgDark() ? 'text-gray-300' : 'text-gray-600';
 
   return (
-    // The <main> tag gets the dynamic background color, covering the whole page
-    <main style={pageStyle} className="min-h-screen flex flex-col items-center transition-colors duration-500">
-      
-      <div className="container mx-auto max-w-3xl flex flex-col items-center pb-12 w-full">
+    <main style={pageStyle} className="min-h-screen transition-colors duration-500">
+      <div className="container mx-auto max-w-3xl flex flex-col items-center pb-12">
         
         <div className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg bg-gray-300">
           {bannerImageUrl && <Image src={bannerImageUrl} alt={`${displayName}'s banner`} layout="fill" className="object-cover" priority={true} />}
         </div>
 
-        {/* The profile card is a static white/dark gray color */}
         <div className="w-full max-w-2xl bg-white dark:bg-gray-800 p-6 md:p-8 shadow-xl relative z-10 -mt-16 md:-mt-20 rounded-lg mx-4 sm:mx-0">
           <div className="flex justify-center -mt-20 md:-mt-24 mb-4">
             {profileImageUrl ? (
@@ -75,32 +70,14 @@ export default async function PublicProfilePage({ params, searchParams }) {
             </div>
           )}
 
-          {/* Text color inside the card is now dynamic */}
           <div className="text-center text-gray-900 dark:text-gray-100">
             <h1 className="text-3xl md:text-4xl font-extrabold mt-2 mb-1">{displayName}</h1>
             {profileData.displayName && <p className="text-lg text-gray-500 dark:text-gray-400 mb-3">@{username}</p>}
             {bio && <p className="text-md text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg mx-auto mb-6">{bio}</p>}
           </div>
 
-          {/* Links Section */}
-          <div className="w-full px-4 md:px-0">
-            {links.length > 0 && (<h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4 text-center">Links</h2>)}
-            <div className="space-y-4">
-              {links.length > 0 ? (
-                links.map((link) => (
-                  <a key={link.id} href={link.url.startsWith('http') ? link.url : `//${link.url}`} target="_blank" rel="noopener noreferrer nofollow"
-                    // Solid blue links as you had previously
-                    className="block w-full text-center font-semibold py-3 px-5 rounded-lg text-lg shadow-md hover:shadow-lg transition-all bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {link.title}
-                  </a>
-                ))
-              ) : ( <p className="italic py-3 text-center text-gray-500 dark:text-gray-400">This user hasn't added any links yet.</p> )}
-            </div>
-          </div>
-          
-          {/* Tipping Section - RESTORED to be below the links */}
-          <div className="mt-8 mb-4 px-4 md:px-0">
+          {/* --- TIPPING SECTION RESTORED TO BE ABOVE LINKS --- */}
+          <div className="mb-8">
             {stripeAccountId && stripeOnboardingComplete ? ( 
               <SendTipButton recipientUsername={username} recipientDisplayName={displayName} />
             ) : ( 
@@ -111,6 +88,22 @@ export default async function PublicProfilePage({ params, searchParams }) {
             )}
           </div>
 
+          {/* Links Section */}
+          <div className="w-full">
+            {links.length > 0 && (<h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4 text-center">Links</h2>)}
+            <div className="space-y-4">
+              {links.length > 0 ? (
+                links.map((link) => (
+                  <a key={link.id} href={link.url.startsWith('http') ? link.url : `//${link.url}`} target="_blank" rel="noopener noreferrer nofollow"
+                    className="block w-full text-center font-semibold py-3 px-5 rounded-lg text-lg shadow-md hover:shadow-lg transition-all bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {link.title}
+                  </a>
+                ))
+              ) : ( <p className="italic py-3 text-center text-gray-500 dark:text-gray-400">This user hasn't added any links yet.</p> )}
+            </div>
+          </div>
+          
         </div>
       </div>
     </main>
