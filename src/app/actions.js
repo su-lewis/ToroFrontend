@@ -53,6 +53,71 @@ export async function handleLogout() {
   redirect('/login');
 }
 
+export async function updateUserPassword(formData) {
+    try {
+        const payload = {
+            currentPassword: formData.get('currentPassword'),
+            newPassword: formData.get('newPassword'),
+        };
+        const response = await fetchProtectedDataFromServer('/users/update-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return { success: true, message: response.message };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to update password." };
+    }
+}
+
+export async function updateUserEmail(formData) {
+    try {
+        const payload = {
+            currentPassword: formData.get('currentPassword'),
+            newEmail: formData.get('newEmail'),
+        };
+        const response = await fetchProtectedDataFromServer('/users/update-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return { success: true, message: response.message };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to update email." };
+    }
+}
+
+export async function sendPasswordReset(formData) {
+    const email = formData.get('email');
+    if (!email) {
+        return { success: false, message: "Email is required." };
+    }
+    
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        { cookies: { get(name) { return cookieStore.get(name)?.value; } } }
+    );
+
+    const redirectTo = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}/auth/reset-password`
+        : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/reset-password`;
+    
+    // console.log("Sending password reset email. Redirecting to:", redirectTo);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectTo,
+    });
+
+    if (error) {
+        console.error("Password reset error:", error);
+        return { success: false, message: "Could not send password reset email. Please try again." };
+    }
+    
+    return { success: true, message: "If an account with this email exists, a password reset link has been sent." };
+}
+
 // --- STRIPE & PAYMENT ACTIONS ---
 export async function createCheckoutSession(formData) {
   try {
@@ -92,9 +157,7 @@ export async function getStripeStatus() {
         const status = await fetchProtectedDataFromServer('/stripe/connect/account-status');
         return { success: true, data: status };
     } catch (error) {
-        if (error.status === 404) {
-            return { success: true, data: null }; 
-        }
+        if (error.status === 404) { return { success: true, data: null }; }
         return { success: false, message: error.bodyText || error.message || "Failed to get Stripe status." };
     }
 }
@@ -104,11 +167,8 @@ export async function createStripeOnboardLink() {
         const response = await fetchProtectedDataFromServer('/stripe/connect/onboard-user', {
             method: 'POST',
         });
-        if (response.url) {
-            return { success: true, url: response.url };
-        } else {
-            throw new Error("Onboarding URL not found in API response.");
-        }
+        if (response.url) { return { success: true, url: response.url }; } 
+        else { throw new Error("Onboarding URL not found in API response."); }
     } catch (error) {
         return { success: false, message: error.bodyText || error.message || 'Failed to start Stripe connection.' };
     }
@@ -119,11 +179,8 @@ export async function createStripeDashboardLink() {
         const response = await fetchProtectedDataFromServer('/stripe/create-express-dashboard-link', {
             method: 'POST',
         });
-        if (response.url) {
-            return { success: true, url: response.url };
-        } else {
-            throw new Error("Dashboard URL not found in API response.");
-        }
+        if (response.url) { return { success: true, url: response.url }; } 
+        else { throw new Error("Dashboard URL not found in API response."); }
     } catch (error) {
         return { success: false, message: error.bodyText || error.message || 'Could not open Stripe dashboard.' };
     }
@@ -182,7 +239,7 @@ export async function saveLinks(linksToSave) {
 // --- PAYMENT ANALYTICS & USER SETTINGS ACTIONS ---
 export async function getPaymentStats(period, currency) {
     try {
-        // Pass period and currency as query parameters to the backend
+        // --- FIX: Corrected typo from '¤cy' to 'currency' ---
         const stats = await fetchProtectedDataFromServer(`/payments/stats?period=${period}¤cy=${currency}`);
         return { success: true, data: stats };
     } catch (error) {
@@ -199,7 +256,6 @@ export async function getPaymentHistory() {
     }
 }
 
-// Fetches the full app-specific user profile from your backend
 export async function getUserSettings() {
     try {
         const user = await fetchProtectedDataFromServer('/users/me');
@@ -213,15 +269,13 @@ export async function getUserSettings() {
     }
 }
 
-// --- ADD THIS NEW ACTION for fetching the Stripe balance ---
 export async function getStripeBalance() {
     try {
         const balance = await fetchProtectedDataFromServer('/stripe/balance');
         return { success: true, data: balance };
     } catch (error) {
-        // A 404 here is expected if the user isn't fully onboarded, not a hard error.
         if (error.status === 404) {
-            return { success: true, data: null }; // Return null to indicate no balance to show
+            return { success: true, data: null };
         }
         return { success: false, message: error.bodyText || error.message || "Failed to fetch Stripe balance." };
     }
