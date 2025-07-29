@@ -84,17 +84,17 @@ export default function ProfileForm({ initialData: profile, serverError }) {
   const displayBanner = bannerPreview || bannerUrl;
 
   return (
-    <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">
+    <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 text-center">
         {profile?.username ? 'Edit Your Profile' : 'Create Your Profile'}
       </h1>
-      {error && <p className="text-red-500 mb-4 p-3 bg-red-100 rounded text-sm text-center">{error}</p>}
-      {success && <p className="text-green-600 mb-4 p-3 bg-green-100 rounded text-sm text-center">{success}</p>}
+      {error && <p className="text-red-500 dark:text-red-300 mb-4 p-3 bg-red-100 dark:bg-red-900/30 rounded text-sm text-center">{error}</p>}
+      {success && <p className="text-green-600 dark:text-green-300 mb-4 p-3 bg-green-100 dark:bg-green-900/30 rounded text-sm text-center">{success}</p>}
       
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
         {/* Banner Image Upload Section */}
         <div className="space-y-2">
-          <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
+          <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
           {displayBanner ? (
             <div className="w-full aspect-[3/1] relative rounded-lg overflow-hidden border border-gray-300 bg-gray-100">
               <Image src={displayBanner} alt="Banner Preview" fill={true} className="object-cover" key={displayBanner} />
@@ -112,7 +112,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
 
         {/* Avatar Upload Section */}
         <div className="flex flex-col items-center space-y-3">
-          <label htmlFor="avatarUploadButton" className="block text-sm font-medium text-gray-700 self-start">Profile Picture</label>
+          <label htmlFor="avatarUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300 self-start">Profile Picture</label>
           {displayAvatar ? (
             <Image src={displayAvatar} alt="Profile Avatar Preview" width={128} height={128} className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 shadow-sm" key={displayAvatar} />
           ) : ( 
@@ -129,21 +129,21 @@ export default function ProfileForm({ initialData: profile, serverError }) {
         {/* Text Fields and Color Picker */}
         <div className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
-            <input type="text" name="username" id="username" defaultValue={profile?.username || ''} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" />
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+            <input type="text" name="username" id="username" defaultValue={profile?.username || ''} required minLength="3" maxLength="20" pattern="^[a-zA-Z0-9_.-]+$" title="3-20 chars. Letters, numbers, _, ., -." className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label>
-            <input type="text" name="displayName" id="displayName" defaultValue={profile?.displayName || ''} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" />
+            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Display Name</label>
+            <input type="text" name="displayName" id="displayName" defaultValue={profile?.displayName || ''} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div>
-            <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
-            <textarea name="bio" id="bio" defaultValue={profile?.bio || ''} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
+            <textarea name="bio" id="bio" defaultValue={profile?.bio || ''} rows="4" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm text-black bg-white focus:ring-blue-500 focus:border-blue-500" placeholder="A little about yourself..."></textarea>
           </div>
           
           {/* Profile Background Color */}
           <div>
-            <label htmlFor="profileBackgroundColor" className="block text-sm font-medium text-gray-700">Profile Background Color</label>
+            <label htmlFor="profileBackgroundColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Background Color</label>
             <div className="mt-1 flex items-center gap-4">
               <input 
                 type="color" 
