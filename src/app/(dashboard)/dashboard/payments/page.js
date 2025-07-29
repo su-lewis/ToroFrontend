@@ -7,71 +7,57 @@ import {
     getPaymentHistory, 
     createStripeDashboardLink,
     triggerInstantPayout,
-    toggleAutoPayouts
+    toggleAutoPayouts,
+    getUserSettings // Import the new action
 } from '@/app/actions';
-import { fetchProtectedDataFromServer } from '@/lib/server-api'; // To get initial user settings
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Switch } from '@headlessui/react';
 
 const formatCurrency = (cents, currency = 'USD') => {
-    // Gracefully handle null/undefined currency
     const displayCurrency = currency ? currency.toUpperCase() : 'USD';
     try {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: displayCurrency }).format(cents / 100);
     } catch (error) {
-        // Fallback for invalid currency codes
-        console.warn(`Invalid currency code provided to formatCurrency: ${currency}`);
         return `$${(cents / 100).toFixed(2)}`;
     }
 };
-
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return new Date(dateString).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
-// Server action to get the user's settings, callable from this client component
-async function getUserSettings() {
-    'use server';
-    try {
-        const user = await fetchProtectedDataFromServer('/users/me');
-        return { success: true, data: user };
-    } catch (error) {
-        return { success: false, message: error.message };
-    }
-}
+// The inline getUserSettings server action has been removed from this file.
 
 export default function PaymentsPage() {
     const [stats, setStats] = useState(null);
     const [history, setHistory] = useState([]);
-    const [user, setUser] = useState(null); // To store user's payout preference
+    const [user, setUser] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-    const [isPending, startTransition] = useTransition(); // A general pending state
+    const [isPending, startTransition] = useTransition();
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
     useEffect(() => {
-        // We use a single transition for the initial data load
         startTransition(async () => {
             setError(null);
             const [statsResult, historyResult, userResult] = await Promise.all([
                 getPaymentStats(),
                 getPaymentHistory(),
-                getUserSettings() // Also fetch user settings like stripeAutoPayoutsEnabled
+                getUserSettings() // Call the imported Server Action
             ]);
 
             if (statsResult.success) setStats(statsResult.data);
-            else setError(statsResult.message || "Failed to load stats.");
-
+            else setError(statsResult.message);
+            
             if (historyResult.success) setHistory(historyResult.data);
-            else setError(prev => `${prev || ''} ${historyResult.message || "Failed to load history."}`.trim());
-
+            else setError(prev => `${prev || ''} ${historyResult.message}`.trim());
+            
             if (userResult.success) setUser(userResult.data);
-            else setError(prev => `${prev || ''} ${userResult.message || "Failed to load user settings."}`.trim());
+            else setError(prev => `${prev || ''} ${userResult.message}`.trim());
             
             setIsLoadingInitial(false);
         });
-    }, []); // Empty dependency array, runs once on mount
+    }, []);
 
     const handleViewStripeDashboard = () => {
         startTransition(async () => {
@@ -90,7 +76,6 @@ export default function PaymentsPage() {
             const result = await triggerInstantPayout();
             if (result.success) {
                 setSuccess(result.data.message);
-                // After a short delay, refresh the page to update stats
                 setTimeout(() => window.location.reload(), 3000);
             } else { setError(result.message); }
         });
@@ -129,7 +114,6 @@ export default function PaymentsPage() {
                 </button>
             </div>
             
-            {/* Payouts Section */}
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payouts</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -170,7 +154,6 @@ export default function PaymentsPage() {
                 </div>
             </div>
 
-            {/* Statistics Section */}
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Statistics</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -187,7 +170,6 @@ export default function PaymentsPage() {
                 </div>
             </div>
 
-            {/* Gift History Section */}
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Gift History</h2>
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">

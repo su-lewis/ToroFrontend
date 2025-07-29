@@ -30,7 +30,7 @@ export async function updateProfile(formData) {
     return { success: true, message: 'Profile updated successfully!' };
   } catch (error) {
     console.error("Error in updateProfile action:", error);
-    return { success: false, message: error.bodyText || error.message || 'An unknown error occurred.' };
+    return { success: false, message: error.bodyText || error.message || 'An unknown error occurred while saving.' };
   }
 }
 
@@ -62,7 +62,7 @@ export async function createCheckoutSession(formData) {
       donorName: formData.get('donorName'),
     };
     if (isNaN(tipData.amount) || !tipData.recipientUsername) {
-      return { success: false, message: 'Invalid data provided.' };
+      return { success: false, message: 'Invalid data provided for tip.' };
     }
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     const url = `${apiBaseUrl}/stripe/create-checkout-session`;
@@ -77,6 +77,9 @@ export async function createCheckoutSession(formData) {
       return { success: false, message: errorData.message || 'Could not initiate payment.' };
     }
     const session = await response.json();
+    if (!session.id) {
+      return { success: false, message: 'Invalid session data received from server.' };
+    }
     return { success: true, sessionId: session.id };
   } catch (error) {
     console.error("Error in createCheckoutSession action:", error);
@@ -126,6 +129,31 @@ export async function createStripeDashboardLink() {
     }
 }
 
+export async function triggerInstantPayout() {
+    try {
+        const response = await fetchProtectedDataFromServer('/stripe/payouts/instant', {
+            method: 'POST',
+        });
+        return { success: true, data: response };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to trigger instant payout." };
+    }
+}
+
+export async function toggleAutoPayouts(enabled) {
+    try {
+        const response = await fetchProtectedDataFromServer('/stripe/payouts/toggle-auto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ autoPayoutsEnabled: enabled }),
+        });
+        return { success: true, data: response };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to update auto-payout setting." };
+    }
+}
+
+
 // --- LINK ACTIONS ---
 export async function getLinks() {
     try {
@@ -151,7 +179,7 @@ export async function saveLinks(linksToSave) {
     }
 }
 
-// --- PAYMENT ANALYTICS ACTIONS ---
+// --- PAYMENT ANALYTICS & USER SETTINGS ACTIONS ---
 export async function getPaymentStats() {
     try {
         const stats = await fetchProtectedDataFromServer('/payments/stats');
@@ -170,26 +198,16 @@ export async function getPaymentHistory() {
     }
 }
 
-export async function triggerInstantPayout() {
+// Fetches the full app-specific user profile from your backend
+export async function getUserSettings() {
     try {
-        const response = await fetchProtectedDataFromServer('/stripe/payouts/instant', {
-            method: 'POST',
-        });
-        return { success: true, data: response }; // response should contain a success message
+        const user = await fetchProtectedDataFromServer('/users/me');
+        return { success: true, data: user };
     } catch (error) {
-        return { success: false, message: error.bodyText || error.message || "Failed to trigger instant payout." };
-    }
-}
-
-export async function toggleAutoPayouts(enabled) {
-    try {
-        const response = await fetchProtectedDataFromServer('/stripe/payouts/toggle-auto', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ autoPayoutsEnabled: enabled }),
-        });
-        return { success: true, data: response };
-    } catch (error) {
-        return { success: false, message: error.bodyText || error.message || "Failed to update auto-payout setting." };
+        return { 
+            success: false, 
+            message: error.bodyText || error.message || "Failed to fetch user settings.",
+            status: error.status
+        };
     }
 }
