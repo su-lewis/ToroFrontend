@@ -169,3 +169,27 @@ export async function getPaymentHistory() {
         return { success: false, message: error.bodyText || error.message || "Failed to fetch payment history." };
     }
 }
+
+export async function triggerInstantPayout() {
+    try {
+        const response = await fetchProtectedDataFromServer('/stripe/payouts/instant', {
+            method: 'POST',
+        });
+        return { success: true, data: response }; // response should contain a success message
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to trigger instant payout." };
+    }
+}
+
+export async function toggleAutoPayouts(enabled) {
+    try {
+        const response = await fetchProtectedDataFromServer('/stripe/payouts/toggle-auto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ autoPayoutsEnabled: enabled }),
+        });
+        return { success: true, data: response };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to update auto-payout setting." };
+    }
+}
