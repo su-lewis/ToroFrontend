@@ -180,9 +180,10 @@ export async function saveLinks(linksToSave) {
 }
 
 // --- PAYMENT ANALYTICS & USER SETTINGS ACTIONS ---
-export async function getPaymentStats() {
+export async function getPaymentStats(period, currency) {
     try {
-        const stats = await fetchProtectedDataFromServer('/payments/stats');
+        // Pass period and currency as query parameters to the backend
+        const stats = await fetchProtectedDataFromServer(`/payments/stats?period=${period}¤cy=${currency}`);
         return { success: true, data: stats };
     } catch (error) {
         return { success: false, message: error.bodyText || error.message || "Failed to fetch payment stats." };

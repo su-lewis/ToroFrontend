@@ -19,6 +19,8 @@ const formatCurrency = (cents, currency = 'USD') => {
     try {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: displayCurrency }).format(cents / 100);
     } catch (error) {
+        // Fallback for invalid currency codes, which can happen if data is missing
+        console.warn(`Invalid currency code provided to formatCurrency: ${currency}`);
         return `$${(cents / 100).toFixed(2)}`;
     }
 };
@@ -35,14 +37,19 @@ export default function PaymentsPage() {
     const [balance, setBalance] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-    const [isPending, startTransition] = useTransition();
+    const [isPending, startTransition] = useTransition(); // General pending state for actions
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
+    const [timeframe, setTimeframe] = useState('30d');
+
+    // Effect for initial data load
     useEffect(() => {
         startTransition(async () => {
             setError(null);
+            const userCurrency = (await getUserSettings()).data?.defaultCurrency || 'usd';
+            
             const [statsResult, historyResult, userResult, balanceResult] = await Promise.all([
-                getPaymentStats(),
+                getPaymentStats(timeframe, userCurrency),
                 getPaymentHistory(),
                 getUserSettings(),
                 getStripeBalance()
@@ -61,7 +68,22 @@ export default function PaymentsPage() {
             
             setIsLoadingInitial(false);
         });
-    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run only on initial mount
+
+    const handleTimeframeChange = (newTimeframe) => {
+        setTimeframe(newTimeframe);
+        const userCurrency = user?.defaultCurrency || 'usd';
+        startTransition(async () => {
+            setError(null);
+            const result = await getPaymentStats(newTimeframe, userCurrency);
+            if (result.success) {
+                setStats(result.data);
+            } else {
+                setError(result.message);
+            }
+        });
+    };
 
     const handleViewStripeDashboard = () => {
         startTransition(async () => {
@@ -80,7 +102,7 @@ export default function PaymentsPage() {
             const result = await triggerInstantPayout();
             if (result.success) {
                 setSuccess(result.data.message);
-                setTimeout(() => window.location.reload(), 3000);
+                setTimeout(() => window.location.reload(), 3000); // Refresh to get updated balance
             } else { setError(result.message); }
         });
     };
@@ -97,8 +119,9 @@ export default function PaymentsPage() {
     };
 
     const availableBalance = balance?.available?.[0];
+    const periodStats = stats?.period;
 
-    if (isLoadingInitial) return <div className="text-center p-10">Loading payment analytics...</div>;
+    if (isLoadingInitial) return <div className="text-center p-10 text-gray-500 dark:text-gray-400">Loading payment analytics...</div>;
 
     return (
         <div className="space-y-10">
@@ -126,14 +149,10 @@ export default function PaymentsPage() {
                     <div className="lg:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
                         <div>
                             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Available for Payout</h3>
-                            {availableBalance ? (
-                                <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
-                                    {formatCurrency(availableBalance.amount, availableBalance.currency)}
-                                </p>
-                            ) : (
-                                <p className="text-4xl font-bold text-gray-400 dark:text-gray-500 mt-2">$0.00</p>
-                            )}
-                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your current available Stripe balance.</p>
+                            <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
+                                {availableBalance ? formatCurrency(availableBalance.amount, availableBalance.currency) : '$0.00'}
+                            </p>
+                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your current Stripe balance.</p>
                         </div>
                     </div>
                     <div className="lg:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
@@ -149,7 +168,7 @@ export default function PaymentsPage() {
                     <div className="lg:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Automatic Payouts</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
-                            Enable for automatic daily payouts.
+                            Enable for automatic daily standard payouts.
                         </p>
                         <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
                             <span className="font-medium text-gray-700 dark:text-gray-200">
@@ -164,17 +183,44 @@ export default function PaymentsPage() {
             </div>
 
             <div>
-                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Statistics</h2>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                    <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Statistics</h2>
+                    <div className="flex space-x-1 bg-gray-200 dark:bg-gray-700 p-1 rounded-lg">
+                        {['Today', '7d', '30d'].map((periodLabel) => {
+                            const periodValue = periodLabel.toLowerCase();
+                            return (
+                                <button
+                                    key={periodValue}
+                                    onClick={() => handleTimeframeChange(periodValue)}
+                                    disabled={isPending}
+                                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 ${
+                                        timeframe === periodValue
+                                            ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow'
+                                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-300/50 dark:hover:bg-gray-600/50'
+                                    }`}
+                                >
+                                    {isPending && timeframe === periodValue ? '...' : periodLabel}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">All-Time Revenue</h3>
-                        <p className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-2">{formatCurrency(stats?.allTime?.revenueCents || 0)}</p>
+                        <p className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-2">{formatCurrency(stats?.allTime?.revenueCents || 0, stats?.allTime?.currency)}</p>
                         <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">from {stats?.allTime?.giftCount || 0} gifts</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">Last 30 Days</h3>
-                        <p className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-2">{formatCurrency(stats?.last30Days?.revenueCents || 0)}</p>
-                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">from {stats?.last30Days?.giftCount || 0} gifts</p>
+                        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                            {timeframe === 'today' && 'Today'}
+                            {timeframe === '7d' && 'Last 7 Days'}
+                            {timeframe === '30d' && 'Last 30 Days'}
+                        </h3>
+                        <p className={`text-3xl font-bold mt-2 transition-colors ${isPending ? 'text-gray-400 animate-pulse' : 'text-gray-800 dark:text-gray-100'}`}>
+                            {formatCurrency(periodStats?.revenueCents || 0, periodStats?.currency)}
+                        </p>
+                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">from {periodStats?.giftCount || 0} gifts</p>
                     </div>
                 </div>
             </div>
@@ -182,16 +228,18 @@ export default function PaymentsPage() {
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Gift History</h2>
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700/50"><tr><th className="px-6 py-3 text-left text-xs uppercase">Date</th><th className="px-6 py-3 text-left text-xs uppercase">From</th><th className="px-6 py-3 text-right text-xs uppercase">Amount</th></tr></thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            {history.length > 0 ? (
-                                history.map((p) => (<tr key={p.id}><td className="px-6 py-4 text-sm">{formatDate(p.createdAt)}</td><td className="px-6 py-4 font-medium">{p.payerName || 'Anonymous'}</td><td className="px-6 py-4 text-right font-semibold text-green-600 dark:text-green-400">{formatCurrency(p.netAmountToRecipient, p.currency)}</td></tr>))
-                            ) : (
-                                <tr><td colSpan="3" className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">You haven't received any gifts yet.</td></tr>
-                            )}
-                        </tbody>
-                    </table>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-700/50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">From</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th></tr></thead>
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                {history.length > 0 ? (
+                                    history.map((p) => (<tr key={p.id}><td className="px-6 py-4 text-sm">{formatDate(p.createdAt)}</td><td className="px-6 py-4 font-medium">{p.payerName || 'Anonymous'}</td><td className="px-6 py-4 text-right font-semibold text-green-600 dark:text-green-400">{formatCurrency(p.netAmountToRecipient, p.currency)}</td></tr>))
+                                ) : (
+                                    <tr><td colSpan="3" className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">You haven't received any gifts yet.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
