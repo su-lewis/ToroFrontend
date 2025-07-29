@@ -1,17 +1,18 @@
 // frontend/src/components/ProfileForm.js
 'use client';
 
-import { useState, useEffect, useRef, useTransition } from 'react';
-import { updateProfile } from '@/app/actions';
-import { supabase } from '@/lib/supabaseClient';
+import { useState, useRef, useTransition } from 'react';
+import { updateProfile } from '@/app/actions'; // Import the server action
+import { supabase } from '@/lib/supabaseClient'; // For client-side uploads
 import Image from 'next/image';
 
+// This component receives the pre-fetched 'profile' data from its parent Server Component
 export default function ProfileForm({ initialData: profile, serverError }) {
   const [error, setError] = useState(serverError?.message || '');
   const [success, setSuccess] = useState('');
   const [isPending, startTransition] = useTransition();
-  const [uploading, setUploading] = useState(false);
   
+  const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.profileImageUrl || null);
   const [bannerUrl, setBannerUrl] = useState(profile?.bannerImageUrl || null);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -77,20 +78,20 @@ export default function ProfileForm({ initialData: profile, serverError }) {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 max-w-2xl bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
-      {error && <div className="p-3 text-center bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md">{error}</div>}
-      {success && <div className="p-3 text-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md">{success}</div>}
+      {error && <div className="p-3 text-center bg-red-100 text-red-700 rounded-md">{error}</div>}
+      {success && <div className="p-3 text-center bg-green-100 text-green-700 rounded-md">{success}</div>}
       
-      {/* Banner Upload UI */}
+      {/* Banner Upload */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Image</label>
-        <div className="w-full aspect-[3/1] rounded-lg bg-gray-100 dark:bg-gray-700 relative flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-          {(bannerPreview || bannerUrl) && <Image src={bannerPreview || bannerUrl} alt="Banner Preview" layout="fill" className="object-cover rounded-lg" />}
-          <input type="file" name="bannerFile" onChange={(e) => handleFileChange(e, 'banner')} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-          <span className="z-10 p-2 bg-white/70 dark:bg-black/50 text-gray-600 dark:text-gray-200 rounded-md pointer-events-none">Change Banner</span>
-        </div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Image</label>
+          <div className="w-full aspect-[3/1] rounded-lg bg-gray-100 relative flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+            {(bannerPreview || bannerUrl) && <Image src={bannerPreview || bannerUrl} alt="Banner Preview" layout="fill" className="object-cover rounded-lg" />}
+            <input type="file" name="bannerFile" onChange={(e) => handleFileChange(e, 'banner')} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <span className="z-10 p-2 bg-white/70 dark:bg-black/50 text-gray-600 dark:text-gray-200 rounded-md pointer-events-none">Change Banner</span>
+          </div>
       </div>
       
-      {/* Avatar Upload UI */}
+      {/* Avatar Upload */}
       <div className="flex flex-col items-center">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Picture</label>
           <div className="relative w-32 h-32">
@@ -101,13 +102,13 @@ export default function ProfileForm({ initialData: profile, serverError }) {
               <input type="file" name="avatarFile" id="avatarFile" onChange={(e) => handleFileChange(e, 'avatar')} accept="image/*" className="hidden" />
           </div>
       </div>
-      
-      <div>
-        <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Background Color</label>
-        <input type="color" name="profileBackgroundColor" id="bgColor" defaultValue={profile?.profileBackgroundColor || '#FFFFFF'} className="mt-1 w-full h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer"/>
-      </div>
 
-      {/* --- RESTORED USERNAME INPUT LAYOUT from your 'old, correct' file --- */}
+      <div>
+          <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Background Color</label>
+          <input type="color" name="profileBackgroundColor" id="bgColor" defaultValue={profile?.profileBackgroundColor || '#FFFFFF'} className="mt-1 w-full h-10 p-1 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer"/>
+      </div>
+      
+      {/* --- RESTORED LAYOUT with dark mode labels and light theme inputs --- */}
       <div>
         <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
         <div className="mt-1 flex rounded-md shadow-sm">
