@@ -122,8 +122,8 @@ export default function ProfileForm({ initialData: profile, serverError }) {
         <div className="space-y-2">
           <label htmlFor="bannerUploadButton" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Banner Image (Recommended: 1200x400 or similar 3:1 ratio)</label>
           {displayBanner ? (
-            <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
-              <Image src={displayBanner} alt="Banner Preview" fill={true} className="object-cover" key={displayBanner} />
+            <div className="w-full max-w-2xl mx-auto">
+              <Image src={displayBanner} alt="Banner Preview" width={800} height={267} className="w-full aspect-[3/1] object-cover rounded-lg" key={displayBanner} />
             </div>
           ) : (
             <div className="w-full aspect-[3/1] bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 border border-dashed border-gray-300">
