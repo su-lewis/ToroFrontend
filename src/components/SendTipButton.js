@@ -58,8 +58,8 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   return (
     // Added dark mode classes to the main container with relative positioning for the theme switcher
     <form action={handleTip} className="relative bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
-      {/* Theme Switcher in top left corner */}
-      <div className="absolute top-3 left-3">
+      {/* Theme Switcher aligned with outer box edge */}
+      <div className="absolute -top-2 -left-2">
         <ThemeSwitcher />
       </div>
       
