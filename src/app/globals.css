@@ -1,33 +1,48 @@
 /* frontend/src/app/globals.css */
+
+/* 1. These are the fundamental Tailwind directives. They must come first. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Default :root variables (light mode) */
+/* 2. Define your theme using CSS variables on the :root (the <html> tag). */
+/*    This sets up the default "light mode" theme. */
 :root {
-  --background: #ffffff; /* white */
-  --foreground: #111827; /* gray-900 */
-  /* Add other global CSS variables if needed */
+  --background-start-rgb: 243, 244, 246; /* gray-100 */
+  --background-end-rgb: 229, 231, 235;   /* gray-200 */
+  --foreground-rgb: 17, 24, 39;          /* gray-900 */
+  --card-background-rgb: 255, 255, 255;  /* white */
+  --card-border-rgb: 229, 231, 235;      /* gray-200 */
 }
 
-/* Dark mode variables */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #111827; /* gray-900 */
-    --foreground: #f3f4f6; /* gray-100 */
-  }
+/* 3. Use the `.dark` selector provided by next-themes and Tailwind's class strategy */
+/*    to override the CSS variables for dark mode. */
+.dark {
+  --background-start-rgb: 17, 24, 39;    /* gray-900 */
+  --background-end-rgb: 31, 41, 55;      /* gray-800 */
+  --foreground-rgb: 249, 250, 251;        /* gray-50 */
+  --card-background-rgb: 31, 41, 55;     /* gray-800 */
+  --card-border-rgb: 55, 65, 81;         /* gray-700 */
 }
 
-/* Apply background and foreground to the body */
+/* 4. Apply these variables to the body. Using rgb values allows for easy opacity variants. */
+/*    e.g., background-color: rgba(var(--card-background-rgb), 0.5) */
 body {
-   overscroll-behavior-y: none;
-  background-color: var(--background);
-  color: var(--foreground);
-  /* Tailwind's base styles will handle fonts, so you might not need a default font-family here */
-  /* If you want a specific non-Tailwind default, set it, but Tailwind usually overrides */
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+  /* This prevents the "bounce" scroll effect on some devices */
+  overscroll-behavior-y: contain; 
 }
 
-/* Example of ensuring inputs have a text color that works in both modes if not using TW classes directly */
-/* input, textarea, select {
-  color: var(--foreground);
-} */
+/* 5. (Optional but recommended) Add some default transition styles for a smoother theme change. */
+body, .bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-800, .bg-gray-900 {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
