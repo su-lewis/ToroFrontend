@@ -59,6 +59,7 @@ export async function updateUserPassword(formData) {
             currentPassword: formData.get('currentPassword'),
             newPassword: formData.get('newPassword'),
         };
+        // This is an authenticated call to our custom backend route
         const response = await fetchProtectedDataFromServer('/users/update-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -66,6 +67,7 @@ export async function updateUserPassword(formData) {
         });
         return { success: true, message: response.message };
     } catch (error) {
+        // The error from fetchProtectedDataFromServer will have a bodyText property
         return { success: false, message: error.bodyText || error.message || "Failed to update password." };
     }
 }
@@ -280,3 +282,4 @@ export async function getStripeBalance() {
         return { success: false, message: error.bodyText || error.message || "Failed to fetch Stripe balance." };
     }
 }
+
