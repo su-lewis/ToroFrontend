@@ -16,26 +16,38 @@ export async function fetchProtectedDataFromServer(relativePath, options = {}) {
     }
   );
 
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  // --- THIS IS THE FIX ---
+  // Change from getSession() to getUser().
+  // getUser() is more robust as it will try to refresh an expired token.
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  if (sessionError || !session) {
-    console.warn("[fetchProtectedDataFromServer] Supabase session error or no session:", sessionError?.message || "No session");
-    const error = new Error('User not authenticated for server API call.');
-    error.status = 401;
+  // If getUser() fails or returns no user, the session is truly invalid.
+  if (userError || !user) {
+    console.warn("[fetchProtectedDataFromServer] Supabase getUser() error or no user:", userError?.message || "No user found");
+    const error = new Error('Auth session missing or invalid. Please log in again.');
+    error.status = 401; // Unauthorized
     throw error;
   }
+  
+  // To make an authenticated API call, we need the access token.
+  // We get this from getSession() AFTER getUser() has ensured the session is fresh.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+      // This should theoretically not happen if getUser() succeeded, but as a safeguard.
+      const error = new Error('Could not retrieve session details after validation.');
+      error.status = 401;
+      throw error;
+  }
 
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL; // e.g., http://localhost:3001/api
+
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!apiBaseUrl) {
-    console.error("[fetchProtectedDataFromServer] CRITICAL: NEXT_PUBLIC_API_BASE_URL is not defined.");
     const error = new Error('API base URL not configured.');
     error.status = 500;
     throw error;
   }
 
-  // Construct the full URL: http://localhost:3001/api + /users/me (if relativePath is /users/me)
   const url = `${apiBaseUrl}${relativePath}`; 
-  // console.log(`[fetchProtectedDataFromServer] Calling: ${options.method || 'GET'} ${url}`);
 
   let response;
   try {
@@ -43,29 +55,19 @@ export async function fetchProtectedDataFromServer(relativePath, options = {}) {
       ...options,
       headers: {
         ...options.headers,
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${session.access_token}`, // Use the fresh access token
         'Content-Type': options.headers?.['Content-Type'] || 'application/json',
       },
       cache: 'no-store',
     });
   } catch (networkError) {
-      console.error(`[fetchProtectedDataFromServer] Network error calling ${url}:`, networkError);
       const error = new Error(`Network error calling API: ${networkError.message}`);
       error.status = 503; 
       throw error;
   }
 
-  if (!response) {
-    console.error(`[fetchProtectedDataFromServer] Fetch returned undefined response for ${url}`);
-    const error = new Error(`No response from API for ${url}`);
-    error.status = 500;
-    throw error;
-  }
-  
-  // console.log(`[fetchProtectedDataFromServer] Response status for ${relativePath}: ${response.status}`);
-
   if (!response.ok) {
-    let errorBodyText = `API Error (${response.status}) for ${url}. Response not OK.`;
+    let errorBodyText = `API Error (${response.status}) for ${url}.`;
     let errorJson = null;
     try { 
       const tempBody = await response.text();
@@ -75,9 +77,8 @@ export async function fetchProtectedDataFromServer(relativePath, options = {}) {
       } catch (parseError) {
         errorBodyText = tempBody.substring(0, 200) || `Status ${response.status}`;
       }
-    } catch (e) { /* ignore if can't get body */ }
+    } catch (e) { /* ignore */ }
     
-    console.error(`[fetchProtectedDataFromServer] API Error (${response.status}) for ${url}: ${errorBodyText}`);
     const error = new Error(`API call to ${relativePath} failed: ${errorBodyText}`);
     error.status = response.status;
     error.body = errorJson; 
@@ -88,10 +89,8 @@ export async function fetchProtectedDataFromServer(relativePath, options = {}) {
   if (response.status === 204) return null;
   
   try {
-    const jsonData = await response.json();
-    return jsonData;
+    return await response.json();
   } catch (jsonError) {
-    console.error(`[fetchProtectedDataFromServer] Error parsing JSON response for ${url}:`, jsonError);
     const error = new Error(`Invalid JSON response from API for ${url}`);
     error.status = 502;
     throw error;
