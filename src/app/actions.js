@@ -241,8 +241,7 @@ export async function saveLinks(linksToSave) {
 // --- PAYMENT ANALYTICS & USER SETTINGS ACTIONS ---
 export async function getPaymentStats(period, currency) {
     try {
-        // --- FIX: Corrected typo from '¤cy' to 'currency' ---
-        const stats = await fetchProtectedDataFromServer(`/payments/stats?period=${period}¤cy=${currency}`);
+        const stats = await fetchProtectedDataFromServer(`/payments/stats?period=${period}&currency=${currency}`);
         return { success: true, data: stats };
     } catch (error) {
         return { success: false, message: error.bodyText || error.message || "Failed to fetch payment stats." };
@@ -282,4 +281,3 @@ export async function getStripeBalance() {
         return { success: false, message: error.bodyText || error.message || "Failed to fetch Stripe balance." };
     }
 }
-

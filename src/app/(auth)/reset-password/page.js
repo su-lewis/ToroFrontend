@@ -15,40 +15,33 @@ export default function ResetPasswordPage() {
   const [isValidSession, setIsValidSession] = useState(false);
   const router = useRouter();
 
-  // On page load, check for the access token in the URL fragment
   useEffect(() => {
-    // This effect runs once on the client after the component mounts.
-    // It checks for a password recovery token in the URL hash.
-    const handlePasswordRecovery = async () => {
-      const { data, error: sessionError } = await supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY') {
-          // The user has successfully signed in via the password recovery link.
-          // The session is now active, and they can update their password.
-          console.log("Password recovery session detected.");
-          setIsValidSession(true);
-        }
-      });
-      
-      // If there's no session active after a moment, the link might be invalid or expired.
-      // A small delay helps ensure the onAuthStateChange has a chance to fire.
-      setTimeout(async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            setIsValidSession(true);
-        } else {
-            setError("Invalid or expired password reset link. Please request a new one.");
-            setIsValidSession(false);
-        }
-      }, 500);
+    let recoverySessionEstablished = false;
 
-      // Return a cleanup function for the listener
-      return () => {
-        data.subscription.unsubscribe();
-      };
+    // Set up the listener for the PASSWORD_RECOVERY event.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        console.log("Password recovery session established.");
+        setIsValidSession(true);
+        recoverySessionEstablished = true;
+      }
+    });
+
+    // After a short delay, check if the recovery event was fired.
+    // If not, it's highly likely the link is invalid or expired.
+    const verificationTimer = setTimeout(() => {
+      if (!recoverySessionEstablished) {
+        setError("Invalid or expired password reset link. Please request a new one.");
+        setIsValidSession(false);
+      }
+    }, 1000); // A 1-second delay provides a good balance.
+
+    // Cleanup function to unsubscribe and clear the timer when the component unmounts.
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(verificationTimer);
     };
-
-    handlePasswordRecovery();
-  }, []); // Run only once
+  }, []); // The empty dependency array ensures this runs only once.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
