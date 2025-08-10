@@ -13,6 +13,13 @@ function ChangeEmailForm() {
 
     const handleSubmit = async (formData) => {
         setError(''); setSuccess('');
+        const newEmail = formData.get('newEmail');
+        const confirmNewEmail = formData.get('confirmNewEmail');
+        if (newEmail !== confirmNewEmail) {
+            setError("New email addresses do not match.");
+            return;
+        }
+
         startTransition(async () => {
             const result = await updateUserEmail(formData);
             if (result.success) {
@@ -40,6 +47,11 @@ function ChangeEmailForm() {
                     <label htmlFor="newEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300">New Email</label>
                     {/* --- FIX: Added dark mode classes --- */}
                     <input type="email" name="newEmail" id="newEmail" required 
+                           className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-black dark:text-white bg-white dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500"/>
+                </div>
+                <div>
+                    <label htmlFor="confirmNewEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm New Email</label>
+                    <input type="email" name="confirmNewEmail" id="confirmNewEmail" required 
                            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-black dark:text-white bg-white dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500"/>
                 </div>
                 <button type="submit" disabled={isPending} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50">
