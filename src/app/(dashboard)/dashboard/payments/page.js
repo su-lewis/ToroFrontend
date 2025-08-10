@@ -44,29 +44,36 @@ export default function PaymentsPage() {
 
     // Effect for initial data load
     useEffect(() => {
-        startTransition(async () => {
+        const loadInitialData = async () => {
+            setIsLoadingInitial(true);
             setError(null);
-            const userCurrency = (await getUserSettings()).data?.defaultCurrency || 'usd';
-            
-            const [statsResult, historyResult, userResult, balanceResult] = await Promise.all([
-                getPaymentStats(timeframe, userCurrency),
-                getPaymentHistory(),
-                getUserSettings(),
-                getStripeBalance()
-            ]);
+            try {
+                // First, get user settings to determine their currency
+                const userResult = await getUserSettings();
+                if (!userResult.success) throw new Error(userResult.message);
+                setUser(userResult.data);
+                const userCurrency = userResult.data?.defaultCurrency || 'usd';
 
-            if (statsResult.success) setStats(statsResult.data);
-            else setError(statsResult.message);
-            
-            if (historyResult.success) setHistory(historyResult.data);
-            else setError(prev => `${prev || ''} ${historyResult.message}`.trim());
-            
-            if (userResult.success) setUser(userResult.data);
-            else setError(prev => `${prev || ''} ${userResult.message}`.trim());
+                // Then, fetch all other data in parallel
+                const [statsResult, historyResult, balanceResult] = await Promise.all([
+                    getPaymentStats(timeframe, userCurrency),
+                    getPaymentHistory(),
+                    getStripeBalance()
+                ]);
 
-            if (balanceResult.success) setBalance(balanceResult.data);
-            
-            setIsLoadingInitial(false);
+                if (statsResult.success) setStats(statsResult.data);
+                if (historyResult.success) setHistory(historyResult.data);
+                if (balanceResult.success) setBalance(balanceResult.data);
+
+            } catch (err) {
+                setError(err.message || 'Failed to load initial payment data. Please refresh the page.');
+            } finally {
+                setIsLoadingInitial(false);
+            }
+        };
+
+        startTransition(async () => {
+            loadInitialData();
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Run only on initial mount
@@ -101,8 +108,12 @@ export default function PaymentsPage() {
             setError(null); setSuccess(null);
             const result = await triggerInstantPayout();
             if (result.success) {
-                setSuccess(result.data.message);
-                setTimeout(() => window.location.reload(), 3000); // Refresh to get updated balance
+                setSuccess(result.data.message + " Refreshing balance...");
+                // Re-fetch only the balance instead of reloading the whole page
+                const balanceResult = await getStripeBalance();
+                if (balanceResult.success) {
+                    setBalance(balanceResult.data);
+                }
             } else { setError(result.message); }
         });
     };
