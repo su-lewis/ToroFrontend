@@ -109,7 +109,7 @@ export default function PaymentsPage() {
             const result = await triggerInstantPayout();
             if (result.success) {
                 setSuccess(result.data.message + " Refreshing balance...");
-                // Re-fetch only the balance instead of reloading the whole page
+                // Re-fetch only the balance instead of reloading the whole page for a smoother UX.
                 const balanceResult = await getStripeBalance();
                 if (balanceResult.success) {
                     setBalance(balanceResult.data);
