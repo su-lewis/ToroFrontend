@@ -8,7 +8,19 @@ import { useTransition } from 'react'; // For Server Action loading state
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-export default function SendTipButton({ recipientUsername, recipientDisplayName }) {
+// Helper to get currency symbol
+const getCurrencySymbol = (currencyCode = 'usd') => {
+    const symbols = {
+        usd: '$',
+        eur: '€',
+        gbp: '£',
+        cad: 'C$',
+        aud: 'A$',
+    };
+    return symbols[currencyCode.toLowerCase()] || '$';
+};
+
+export default function SendTipButton({ recipientUsername, recipientDisplayName, preferredCurrency }) { // <-- ADD PROP
   const MINIMUM_TIP_AMOUNT = 5;
   const MAXIMUM_TIP_AMOUNT = 1111;
   const [amount, setAmount] = useState(MINIMUM_TIP_AMOUNT.toString());
@@ -16,8 +28,10 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   const [error, setError] = useState(null);
   const [isPending, startTransition] = useTransition();
 
+  const currencySymbol = getCurrencySymbol(preferredCurrency);
+
   const platformFeePercentage = 0.15;
-   const platformFeeFixed = 1.00; // NEW: The fixed $1 fee
+  const platformFeeFixed = 1.00; // NEW: The fixed $1 fee
 
   // Calculation for the simple "add-on" fee model for display
   const calculateTotalDonorPays = (creatorAmount) => {
@@ -74,7 +88,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
       <input type="hidden" name="recipientUsername" value={recipientUsername} />
 
       <div className="flex items-center justify-center space-x-2 mb-4">
-        <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">$</span>
+        <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">{currencySymbol}</span>
         {/* Input with dark mode background */}
         <input
           type="text"
@@ -96,11 +110,11 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
         <div className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4 py-3">
             <div className="flex justify-between items-center px-2">
                 <span>Platform & Stripe Fee:</span>
-                <span className="font-semibold">+ ${platformFeeNum.toFixed(2)}</span>
+                 <span className="font-semibold">+ {currencySymbol}{platformFeeNum.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center px-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                 <span className="font-bold">Total You Pay:</span>
-                <span className="font-bold">${totalDonorPaysNum.toFixed(2)}</span>
+                 <span className="font-bold">{currencySymbol}{totalDonorPaysNum.toFixed(2)}</span>
             </div>
         </div>
       )}
@@ -123,7 +137,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
         disabled={isPending || isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT || creatorAmountNum > MAXIMUM_TIP_AMOUNT}
         className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
       >
-        {isPending ? 'Processing...' : `Pay $${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}
+         {isPending ? 'Processing...' : `Pay ${currencySymbol}${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}
       </button>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">Powered by Stripe</p>
     </form>
