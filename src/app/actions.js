@@ -212,6 +212,25 @@ export async function toggleAutoPayouts(enabled) {
     }
 }
 
+// --- Change Currency ---
+export async function updateUserCurrency(formData) {
+  const currency = formData.get('currency');
+  if (!currency || !['usd', 'eur', 'gbp', 'cad', 'aud'].includes(currency)) { // Add more currencies as needed
+    return { success: false, message: 'Invalid currency selected.' };
+  }
+
+  try {
+    const response = await fetchProtectedDataFromServer('/users/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferredCurrency: currency }),
+    });
+    revalidatePath('/dashboard/payments');
+    return { success: true, message: `Payment currency updated to ${currency.toUpperCase()}.` };
+  } catch (error) {
+    return { success: false, message: error.bodyText || error.message || 'Failed to update currency.' };
+  }
+}
 
 // --- LINK ACTIONS ---
 export async function getLinks() {

@@ -1,7 +1,6 @@
 // frontend/src/app/(dashboard)/dashboard/payments/page.js
 'use client';
-
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react'; // Add useRef
 import { 
     getPaymentStats, 
     getPaymentHistory, 
@@ -9,7 +8,8 @@ import {
     triggerInstantPayout,
     toggleAutoPayouts,
     getUserSettings,
-    getStripeBalance 
+    getStripeBalance,
+    updateUserCurrency 
 } from '@/app/actions';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Switch } from '@headlessui/react';
@@ -41,6 +41,56 @@ export default function PaymentsPage() {
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
     const [timeframe, setTimeframe] = useState('30d');
+
+// --- ADD THIS NEW COMPONENT INSIDE THE FILE ---
+function CurrencySettings({ user, isPending, setSuccess, setError }) {
+    const [_, startTransition] = useTransition();
+    const formRef = useRef(null);
+
+    const handleCurrencyChange = (event) => {
+        const formData = new FormData(formRef.current);
+        startTransition(async () => {
+            setError(null); setSuccess(null);
+            const result = await updateUserCurrency(formData);
+            if (result.success) {
+                setSuccess(result.message);
+            } else {
+                setError(result.message);
+            }
+        });
+    };
+
+    return (
+        <div>
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Currency Settings</h2>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                <form ref={formRef}>
+                    <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Preferred Payment Currency
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                        This is the currency donors will see and pay in on your public profile.
+                    </p>
+                    <select
+                        id="currency"
+                        name="currency"
+                        defaultValue={user?.preferredCurrency || 'usd'}
+                        onChange={handleCurrencyChange}
+                        disabled={isPending}
+                        className="mt-1 block w-full md:w-1/2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-black dark:text-white bg-white dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="usd">USD ($)</option>
+                        <option value="eur">EUR (€)</option>
+                        <option value="gbp">GBP (£)</option>
+                        <option value="cad">CAD (C$)</option>
+                        <option value="aud">AUD (A$)</option>
+                        {/* Add more currencies here that you want to support */}
+                    </select>
+                </form>
+            </div>
+        </div>
+    );
+}
 
     // Effect for initial data load
     useEffect(() => {
@@ -144,6 +194,7 @@ export default function PaymentsPage() {
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Payment & Payouts</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">View your revenue and manage how you get paid.</p>
                 </div>
+                <CurrencySettings user={user} isPending={isPending} setSuccess={setSuccess} setError={setError} />
                 <button
                     onClick={handleViewStripeDashboard}
                     disabled={isPending}
