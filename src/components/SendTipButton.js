@@ -17,11 +17,12 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName 
   const [isPending, startTransition] = useTransition();
 
   const platformFeePercentage = 0.15;
+   const platformFeeFixed = 1.00; // NEW: The fixed $1 fee
 
   // Calculation for the simple "add-on" fee model for display
   const calculateTotalDonorPays = (creatorAmount) => {
     if (isNaN(creatorAmount) || creatorAmount <= 0) return { total: 0, fee: 0 };
-    const fee = creatorAmount * platformFeePercentage;
+   const fee = (creatorAmount * platformFeePercentage) + platformFeeFixed;
     const total = creatorAmount + fee;
     return { total, fee };
   };
