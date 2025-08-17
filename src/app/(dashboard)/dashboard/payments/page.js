@@ -1,6 +1,8 @@
-// frontend/src/app/(dashboard)/dashboard/payments/page.js
+// File: frontend/src/app/(dashboard)/dashboard/payments/page.js
+
 'use client';
-import { useState, useEffect, useTransition, useRef } from 'react'; // Add useRef
+
+import { useState, useEffect, useTransition, useRef } from 'react';
 import { 
     getPaymentStats, 
     getPaymentHistory, 
@@ -9,7 +11,7 @@ import {
     toggleAutoPayouts,
     getUserSettings,
     getStripeBalance,
-    updateUserCurrency 
+    updateUserCurrency
 } from '@/app/actions';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Switch } from '@headlessui/react';
@@ -19,7 +21,6 @@ const formatCurrency = (cents, currency = 'USD') => {
     try {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: displayCurrency }).format(cents / 100);
     } catch (error) {
-        // Fallback for invalid currency codes, which can happen if data is missing
         console.warn(`Invalid currency code provided to formatCurrency: ${currency}`);
         return `$${(cents / 100).toFixed(2)}`;
     }
@@ -30,19 +31,6 @@ const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
-export default function PaymentsPage() {
-    const [stats, setStats] = useState(null);
-    const [history, setHistory] = useState([]);
-    const [user, setUser] = useState(null);
-    const [balance, setBalance] = useState(null);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
-    const [isPending, startTransition] = useTransition(); // General pending state for actions
-    const [isLoadingInitial, setIsLoadingInitial] = useState(true);
-
-    const [timeframe, setTimeframe] = useState('30d');
-
-// --- ADD THIS NEW COMPONENT INSIDE THE FILE ---
 function CurrencySettings({ user, isPending, setSuccess, setError }) {
     const [_, startTransition] = useTransition();
     const formRef = useRef(null);
@@ -62,7 +50,8 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
 
     return (
         <div>
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Currency Settings</h2>
+            {/* FIX #3: Added a min-height to prevent layout shift */}
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4 min-h-[28px]">Currency Settings</h2>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                 <form ref={formRef}>
                     <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -84,7 +73,6 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
                         <option value="gbp">GBP (£)</option>
                         <option value="cad">CAD (C$)</option>
                         <option value="aud">AUD (A$)</option>
-                        {/* Add more currencies here that you want to support */}
                     </select>
                 </form>
             </div>
@@ -92,19 +80,35 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
     );
 }
 
-    // Effect for initial data load
+
+export default function PaymentsPage() {
+    const [stats, setStats] = useState(null);
+    const [history, setHistory] = useState([]);
+    const [user, setUser] = useState(null);
+    const [balance, setBalance] = useState(null);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
+    
+    // FIX #1: Create separate loading states for each action
+    const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+    const [isStatsLoading, setIsStatsLoading] = useState(false);
+    const [isDashboardLoading, setIsDashboardLoading] = useState(false);
+    const [isPayoutLoading, setIsPayoutLoading] = useState(false);
+    const [isToggleLoading, setIsToggleLoading] = useState(false);
+
+    const [timeframe, setTimeframe] = useState('30d');
+    const [_, startTransition] = useTransition();
+
     useEffect(() => {
         const loadInitialData = async () => {
             setIsLoadingInitial(true);
             setError(null);
             try {
-                // First, get user settings to determine their currency
                 const userResult = await getUserSettings();
                 if (!userResult.success) throw new Error(userResult.message);
                 setUser(userResult.data);
                 const userCurrency = userResult.data?.defaultCurrency || 'usd';
 
-                // Then, fetch all other data in parallel
                 const [statsResult, historyResult, balanceResult] = await Promise.all([
                     getPaymentStats(timeframe, userCurrency),
                     getPaymentHistory(),
@@ -121,61 +125,67 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
                 setIsLoadingInitial(false);
             }
         };
-
-        startTransition(async () => {
-            loadInitialData();
-        });
+        
+        loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Run only on initial mount
+    }, []);
 
     const handleTimeframeChange = (newTimeframe) => {
         setTimeframe(newTimeframe);
-        const userCurrency = user?.defaultCurrency || 'usd';
+        setIsStatsLoading(true);
+        setError(null);
+
         startTransition(async () => {
-            setError(null);
+            const userCurrency = user?.defaultCurrency || 'usd';
             const result = await getPaymentStats(newTimeframe, userCurrency);
             if (result.success) {
                 setStats(result.data);
             } else {
                 setError(result.message);
             }
+            setIsStatsLoading(false);
         });
     };
 
     const handleViewStripeDashboard = () => {
+        setIsDashboardLoading(true);
+        setError(null); setSuccess(null);
         startTransition(async () => {
-            setError(null); setSuccess(null);
             const result = await createStripeDashboardLink();
             if (result.success && result.url) {
                 window.open(result.url, '_blank', 'noopener,noreferrer');
             } else { setError(result.message); }
+            setIsDashboardLoading(false);
         });
     };
     
     const handlePayoutNow = () => {
         if (!window.confirm("This will attempt to instantly pay out your available Stripe balance. Stripe's 1% fee applies. Continue?")) return;
+        setIsPayoutLoading(true);
+        setError(null); setSuccess(null);
         startTransition(async () => {
-            setError(null); setSuccess(null);
             const result = await triggerInstantPayout();
             if (result.success) {
                 setSuccess(result.data.message + " Refreshing balance...");
-                // Re-fetch only the balance instead of reloading the whole page for a smoother UX.
                 const balanceResult = await getStripeBalance();
                 if (balanceResult.success) {
                     setBalance(balanceResult.data);
                 }
             } else { setError(result.message); }
+            setIsPayoutLoading(false);
         });
     };
 
     const handleToggleAutoPayouts = (enabled) => {
+        setIsToggleLoading(true);
+        setError(null); setSuccess(null);
         startTransition(async () => {
-            setError(null); setSuccess(null);
             const result = await toggleAutoPayouts(enabled);
             if (result.success) {
                 setUser(prev => ({ ...prev, stripeAutoPayoutsEnabled: enabled }));
                 setSuccess(result.data.message);
             } else { setError(result.message); }
+            setIsToggleLoading(false);
         });
     };
 
@@ -194,16 +204,18 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Payment & Payouts</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">View your revenue and manage how you get paid.</p>
                 </div>
-                <CurrencySettings user={user} isPending={isPending} setSuccess={setSuccess} setError={setError} />
+                {/* FIX #2: Connect button's loading state to its specific variable */}
                 <button
                     onClick={handleViewStripeDashboard}
-                    disabled={isPending}
+                    disabled={isDashboardLoading}
                     className="w-full md:w-auto inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md text-sm disabled:opacity-70"
                 >
-                    {isPending ? 'Loading...' : 'Manage on Stripe'}
+                    {isDashboardLoading ? 'Loading...' : 'Manage on Stripe'}
                     <ArrowTopRightOnSquareIcon className="ml-2 h-4 w-4"/>
                 </button>
             </div>
+
+            <CurrencySettings user={user} isPending={isToggleLoading} setSuccess={setSuccess} setError={setError} />
             
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payouts & Balance</h2>
@@ -222,8 +234,8 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
                             Instantly pay out your available balance.
                         </p>
-                        <button onClick={handlePayoutNow} disabled={isPending || !availableBalance || availableBalance.amount <= 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isPending ? 'Processing...' : 'Payout Now'}
+                        <button onClick={handlePayoutNow} disabled={isPayoutLoading || !availableBalance || availableBalance.amount <= 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                            {isPayoutLoading ? 'Processing...' : 'Payout Now'}
                         </button>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">Stripe applies a 1% fee.</p>
                     </div>
@@ -236,7 +248,7 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
                             <span className="font-medium text-gray-700 dark:text-gray-200">
                                 {user?.stripeAutoPayoutsEnabled ? 'Auto Payouts: ON' : 'Auto Payouts: OFF'}
                             </span>
-                            <Switch checked={user?.stripeAutoPayoutsEnabled || false} onChange={handleToggleAutoPayouts} disabled={isPending} className={`${user?.stripeAutoPayoutsEnabled ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50`}>
+                            <Switch checked={user?.stripeAutoPayoutsEnabled || false} onChange={handleToggleAutoPayouts} disabled={isToggleLoading} className={`${user?.stripeAutoPayoutsEnabled ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50`}>
                                 <span className={`${user?.stripeAutoPayoutsEnabled ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
                             </Switch>
                         </div>
@@ -254,14 +266,14 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
                                 <button
                                     key={periodValue}
                                     onClick={() => handleTimeframeChange(periodValue)}
-                                    disabled={isPending}
+                                    disabled={isStatsLoading}
                                     className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 ${
                                         timeframe === periodValue
                                             ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow'
                                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-300/50 dark:hover:bg-gray-600/50'
                                     }`}
                                 >
-                                    {isPending && timeframe === periodValue ? '...' : periodLabel}
+                                    {isStatsLoading && timeframe === periodValue ? '...' : periodLabel}
                                 </button>
                             )
                         })}
@@ -279,7 +291,7 @@ function CurrencySettings({ user, isPending, setSuccess, setError }) {
                             {timeframe === '7d' && 'Last 7 Days'}
                             {timeframe === '30d' && 'Last 30 Days'}
                         </h3>
-                        <p className={`text-3xl font-bold mt-2 transition-colors ${isPending ? 'text-gray-400 animate-pulse' : 'text-gray-800 dark:text-gray-100'}`}>
+                        <p className={`text-3xl font-bold mt-2 transition-colors ${isStatsLoading ? 'text-gray-400 animate-pulse' : 'text-gray-800 dark:text-gray-100'}`}>
                             {formatCurrency(periodStats?.revenueCents || 0, periodStats?.currency)}
                         </p>
                         <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">from {periodStats?.giftCount || 0} gifts</p>
