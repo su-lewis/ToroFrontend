@@ -31,49 +31,71 @@ const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
+
 function CurrencySettings({ user, isPending, setSuccess, setError }) {
     const [_, startTransition] = useTransition();
     const formRef = useRef(null);
 
-    const handleCurrencyChange = (event) => {
+    // This handler will submit the form whenever a radio button is clicked
+    const handleFormChange = () => {
         const formData = new FormData(formRef.current);
         startTransition(async () => {
             setError(null); setSuccess(null);
             const result = await updateUserCurrency(formData);
             if (result.success) {
                 setSuccess(result.message);
+                // Also update the user state locally for instant UI feedback
+                const newCurrency = formData.get('currency');
+                user.preferredCurrency = newCurrency;
             } else {
                 setError(result.message);
             }
         });
     };
+    
+    // Get the native currency to display it, default to USD if not set
+    const nativeCurrency = user?.stripeDefaultCurrency?.toUpperCase() || 'USD';
 
     return (
         <div>
-            {/* FIX #3: Added a min-height to prevent layout shift */}
             <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4 min-h-[28px]">Currency Settings</h2>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                <form ref={formRef}>
-                    <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Preferred Payment Currency
-                    </label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                        This is the currency donors will see and pay in on your public profile.
-                    </p>
-                    <select
-                        id="currency"
-                        name="currency"
-                        defaultValue={user?.preferredCurrency || 'usd'}
-                        onChange={handleCurrencyChange}
-                        disabled={isPending}
-                        className="mt-1 block w-full md:w-1/2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-black dark:text-white bg-white dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        <option value="usd">USD ($)</option>
-                        <option value="eur">EUR (€)</option>
-                        <option value="gbp">GBP (£)</option>
-                        <option value="cad">CAD (C$)</option>
-                        <option value="aud">AUD (A$)</option>
-                    </select>
+                <p className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Preferred Payment Currency
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">
+                    This is the currency donors will see and pay in on your public profile.
+                </p>
+                <form ref={formRef} onChange={handleFormChange}>
+                    <fieldset className="space-y-2">
+                        <legend className="sr-only">Currency Preference</legend>
+                        <div className="flex items-center gap-x-3">
+                            <input
+                                id="currency-native"
+                                name="currency"
+                                type="radio"
+                                value="native"
+                                defaultChecked={user?.preferredCurrency !== 'usd'}
+                                className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                            />
+                            <label htmlFor="currency-native" className="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                Native Currency ({nativeCurrency})
+                            </label>
+                        </div>
+                        <div className="flex items-center gap-x-3">
+                            <input
+                                id="currency-usd"
+                                name="currency"
+                                type="radio"
+                                value="usd"
+                                defaultChecked={user?.preferredCurrency === 'usd'}
+                                className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                            />
+                            <label htmlFor="currency-usd" className="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                United States Dollar (USD)
+                            </label>
+                        </div>
+                    </fieldset>
                 </form>
             </div>
         </div>

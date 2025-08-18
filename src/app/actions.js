@@ -215,9 +215,11 @@ export async function toggleAutoPayouts(enabled) {
 // --- Change Currency ---
 export async function updateUserCurrency(formData) {
   const currency = formData.get('currency');
-  if (!currency || !['usd', 'eur', 'gbp', 'cad', 'aud'].includes(currency)) { // Add more currencies as needed
-    return { success: false, message: 'Invalid currency selected.' };
+  // --- CHANGE THIS LINE ---
+  if (!currency || !['usd', 'native'].includes(currency)) {
+    return { success: false, message: 'Invalid currency selection.' };
   }
+  // --- END OF CHANGE ---
 
   try {
     const response = await fetchProtectedDataFromServer('/users/profile', {
