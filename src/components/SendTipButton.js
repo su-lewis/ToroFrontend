@@ -20,7 +20,8 @@ const getCurrencySymbol = (currencyCode = 'usd') => {
     return symbols[currencyCode.toLowerCase()] || '$';
 };
 
-export default function SendTipButton({ recipientUsername, recipientDisplayName, preferredCurrency }) { // <-- ADD PROP
+export default function SendTipButton({ recipientUsername, recipientDisplayName, payoutsInUsd, stripeDefaultCurrency }) { // <-- ADD PROP
+  
   const MINIMUM_TIP_AMOUNT = 5;
   const MAXIMUM_TIP_AMOUNT = 1111;
   const [amount, setAmount] = useState(MINIMUM_TIP_AMOUNT.toString());
@@ -28,15 +29,17 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
   const [error, setError] = useState(null);
   const [isPending, startTransition] = useTransition();
 
-  const currencySymbol = getCurrencySymbol(preferredCurrency);
+  // --- FIX: Logic to determine the correct currency to display ---
+  const displayCurrency = payoutsInUsd ? 'usd' : (stripeDefaultCurrency || 'usd');
+  const currencySymbol = getCurrencySymbol(displayCurrency);
 
   const platformFeePercentage = 0.15;
-  const platformFeeFixed = 1.00; // NEW: The fixed $1 fee
+  const platformFeeFixed = 1.00;
 
-  // Calculation for the simple "add-on" fee model for display
+  // Calculation for the simple "add-on" fee model for display (no changes needed)
   const calculateTotalDonorPays = (creatorAmount) => {
     if (isNaN(creatorAmount) || creatorAmount <= 0) return { total: 0, fee: 0 };
-   const fee = (creatorAmount * platformFeePercentage) + platformFeeFixed;
+    const fee = (creatorAmount * platformFeePercentage) + platformFeeFixed;
     const total = creatorAmount + fee;
     return { total, fee };
   };
@@ -45,12 +48,13 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
   const { total: totalDonorPaysNum, fee: platformFeeNum } = calculateTotalDonorPays(creatorAmountNum);
 
   const handleTip = async (formData) => {
+    // --- FIX: The error message should use the dynamic currency symbol ---
     if (isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT) {
-      setError(`Please enter a valid amount for the creator (min $${MINIMUM_TIP_AMOUNT.toFixed(2)} or equivalent).`);
+      setError(`Please enter a valid amount for the creator (min ${currencySymbol}${MINIMUM_TIP_AMOUNT.toFixed(2)} or equivalent).`);
       return;
     }
     if (creatorAmountNum > MAXIMUM_TIP_AMOUNT) {
-      setError(`Amount cannot exceed $${MAXIMUM_TIP_AMOUNT.toFixed(2)}.`);
+      setError(`Amount cannot exceed ${currencySymbol}${MAXIMUM_TIP_AMOUNT.toFixed(2)}.`);
       return;
     }
     setError(null);
@@ -75,7 +79,6 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
   };
 
   return (
-    // Added dark mode classes to the main container
     <form action={handleTip} className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
       <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100 text-center">
         Send a Tip to {recipientDisplayName || recipientUsername}
@@ -83,13 +86,12 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
       
       {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4 p-2 bg-red-100 dark:bg-red-900/30 rounded-md text-center">{error}</p>}
       
-      {/* Hidden inputs to pass data to the Server Action */}
       <input type="hidden" name="amount" value={amount} />
       <input type="hidden" name="recipientUsername" value={recipientUsername} />
 
       <div className="flex items-center justify-center space-x-2 mb-4">
+        {/* This now correctly displays the dynamic currency symbol */}
         <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">{currencySymbol}</span>
-        {/* Input with dark mode background */}
         <input
           type="text"
           value={amount}
@@ -120,10 +122,9 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
       )}
 
       <div className="mb-4 flex flex-col items-center">
-        {/* Input with dark mode background */}
         <input
           id="donorName"
-          name="donorName" // 'name' attribute is crucial for FormData
+          name="donorName"
           value={donorName}
           onChange={(e) => setDonorName(e.target.value)}
           placeholder="Anonymous"
