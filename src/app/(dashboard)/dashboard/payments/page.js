@@ -16,15 +16,21 @@ import {
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Switch } from '@headlessui/react';
 
+// --- CORRECTED HELPER FUNCTION ---
 const formatCurrency = (cents, currency = 'USD') => {
     const displayCurrency = currency ? currency.toUpperCase() : 'USD';
     try {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: displayCurrency }).format(cents / 100);
+        // Apply the same fix here by removing 'en-US'
+        return new Intl.NumberFormat(undefined, { 
+            style: 'currency', 
+            currency: displayCurrency 
+        }).format(cents / 100);
     } catch (error) {
-        console.warn(`Invalid currency code provided to formatCurrency: ${currency}`);
+        // This fallback is still good to have
         return `$${(cents / 100).toFixed(2)}`;
     }
 };
+
 
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
