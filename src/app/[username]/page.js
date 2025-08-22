@@ -29,11 +29,21 @@ export default async function PublicProfilePage({ params, searchParams }) {
     notFound();
   }
 
+  // --- THIS IS THE FIX (Part 1) ---
+  // Destructure the new currency fields from the data fetched from your API.
   const {
-    displayName = username, bio = "", profileImageUrl, bannerImageUrl,
-    links = [], stripeAccountId, stripeOnboardingComplete,
-    profileBackgroundColor = '#F3F4F6'
+    displayName = username, 
+    bio = "", 
+    profileImageUrl, 
+    bannerImageUrl,
+    links = [], 
+    stripeAccountId, 
+    stripeOnboardingComplete,
+    profileBackgroundColor = '#F3F4F6',
+    payoutsInUsd,             // <-- The new boolean field
+    stripeDefaultCurrency,    // <-- The creator's native currency
   } = profileData;
+
 
   const pageStyle = { backgroundColor: profileBackgroundColor };
   const isBgDark = () => {
@@ -82,10 +92,16 @@ export default async function PublicProfilePage({ params, searchParams }) {
             {bio && <p className="text-md text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg mx-auto mb-6">{bio}</p>}
           </div>
 
-          {/* --- TIPPING SECTION RESTORED TO BE ABOVE LINKS --- */}
           <div className="mb-8">
             {stripeAccountId && stripeOnboardingComplete ? ( 
-              <SendTipButton recipientUsername={username} recipientDisplayName={displayName} />
+              // --- THIS IS THE FIX (Part 2) ---
+              // Pass the new currency props to the SendTipButton component.
+              <SendTipButton 
+                recipientUsername={username} 
+                recipientDisplayName={displayName}
+                payoutsInUsd={payoutsInUsd}
+                stripeDefaultCurrency={stripeDefaultCurrency}
+              />
             ) : ( 
               profileData && 
               <div className="mt-6 p-3 rounded-md shadow text-center text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
@@ -93,6 +109,7 @@ export default async function PublicProfilePage({ params, searchParams }) {
               </div> 
             )}
           </div>
+
 
           {/* Links Section */}
           <div className="w-full">
