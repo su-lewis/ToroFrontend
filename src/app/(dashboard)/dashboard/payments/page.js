@@ -11,7 +11,7 @@ import {
     toggleAutoPayouts,
     getUserSettings,
     getStripeBalance,
-    updateUserCurrency
+    updateUserPayoutsInUsd
 } from '@/app/actions';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Switch } from '@headlessui/react';
@@ -30,78 +30,6 @@ const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 };
-
-
-function CurrencySettings({ user, isPending, setSuccess, setError }) {
-    const [_, startTransition] = useTransition();
-    const formRef = useRef(null);
-
-    // This handler will submit the form whenever a radio button is clicked
-    const handleFormChange = () => {
-        const formData = new FormData(formRef.current);
-        startTransition(async () => {
-            setError(null); setSuccess(null);
-            const result = await updateUserCurrency(formData);
-            if (result.success) {
-                setSuccess(result.message);
-                // Also update the user state locally for instant UI feedback
-                const newCurrency = formData.get('currency');
-                user.preferredCurrency = newCurrency;
-            } else {
-                setError(result.message);
-            }
-        });
-    };
-    
-    // Get the native currency to display it, default to USD if not set
-    const nativeCurrency = user?.stripeDefaultCurrency?.toUpperCase() || 'USD';
-
-    return (
-        <div>
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4 min-h-[28px]">Currency Settings</h2>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                <p className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Preferred Payment Currency
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">
-                    This is the currency donors will see and pay in on your public profile.
-                </p>
-                <form ref={formRef} onChange={handleFormChange}>
-                    <fieldset className="space-y-2">
-                        <legend className="sr-only">Currency Preference</legend>
-                        <div className="flex items-center gap-x-3">
-                            <input
-                                id="currency-native"
-                                name="currency"
-                                type="radio"
-                                value="native"
-                                defaultChecked={user?.preferredCurrency !== 'usd'}
-                                className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                            />
-                            <label htmlFor="currency-native" className="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                Native Currency ({nativeCurrency})
-                            </label>
-                        </div>
-                        <div className="flex items-center gap-x-3">
-                            <input
-                                id="currency-usd"
-                                name="currency"
-                                type="radio"
-                                value="usd"
-                                defaultChecked={user?.preferredCurrency === 'usd'}
-                                className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                            />
-                            <label htmlFor="currency-usd" className="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
-                                United States Dollar (USD)
-                            </label>
-                        </div>
-                    </fieldset>
-                </form>
-            </div>
-        </div>
-    );
-}
-
 
 export default function PaymentsPage() {
     const [stats, setStats] = useState(null);
@@ -129,7 +57,7 @@ export default function PaymentsPage() {
                 const userResult = await getUserSettings();
                 if (!userResult.success) throw new Error(userResult.message);
                 setUser(userResult.data);
-                const userCurrency = userResult.data?.defaultCurrency || 'usd';
+                const userCurrency = userResult.data.payoutsInUsd ? 'usd' : (userResult.data.stripeDefaultCurrency || 'usd');
 
                 const [statsResult, historyResult, balanceResult] = await Promise.all([
                     getPaymentStats(timeframe, userCurrency),
@@ -152,6 +80,25 @@ export default function PaymentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+ // --- CHANGE: A new handler for our new currency switch ---
+    const handleCurrencyToggle = (enabled) => {
+        // We can reuse the isToggleLoading state for this switch as well
+        setIsToggleLoading(true);
+        setError(null); setSuccess(null);
+        startTransition(async () => {
+            const result = await updateUserPayoutsInUsd(enabled);
+            if (result.success) {
+                setSuccess(result.message);
+                // Re-fetch user to get the latest state
+                const userResult = await getUserSettings();
+                if (userResult.success) setUser(userResult.data);
+            } else { 
+                setError(result.message); 
+            }
+            setIsToggleLoading(false);
+        });
+    };
+    
     const handleTimeframeChange = (newTimeframe) => {
         setTimeframe(newTimeframe);
         setIsStatsLoading(true);
@@ -237,7 +184,31 @@ export default function PaymentsPage() {
                 </button>
             </div>
 
-            <CurrencySettings user={user} isPending={isToggleLoading} setSuccess={setSuccess} setError={setError} />
+             <div>
+                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payment Currency</h2>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Receive Payments in USD</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {user?.payoutsInUsd 
+                                    ? "Donors will see and pay in USD ($)." 
+                                    : `Donors will see and pay in your native currency (${user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).`
+                                }
+                            </p>
+                        </div>
+                        <Switch
+                            checked={user?.payoutsInUsd ?? true} // Default to true if user object is loading
+                            onChange={handleCurrencyToggle}
+                            disabled={isToggleLoading || !user?.stripeDefaultCurrency}
+                            className={`${user?.payoutsInUsd ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                            <span className={`${user?.payoutsInUsd ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                        </Switch>
+                    </div>
+                    {!user?.stripeDefaultCurrency && <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-3">Connect to Stripe to enable native currency payments.</p>}
+                </div>
+            </div>
             
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payouts & Balance</h2>

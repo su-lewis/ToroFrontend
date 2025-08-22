@@ -212,28 +212,6 @@ export async function toggleAutoPayouts(enabled) {
     }
 }
 
-// --- Change Currency ---
-export async function updateUserCurrency(formData) {
-  const currency = formData.get('currency');
-  // --- CHANGE THIS LINE ---
-  if (!currency || !['usd', 'native'].includes(currency)) {
-    return { success: false, message: 'Invalid currency selection.' };
-  }
-  // --- END OF CHANGE ---
-
-  try {
-    const response = await fetchProtectedDataFromServer('/users/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ preferredCurrency: currency }),
-    });
-    revalidatePath('/dashboard/payments');
-    return { success: true, message: `Payment currency updated to ${currency.toUpperCase()}.` };
-  } catch (error) {
-    return { success: false, message: error.bodyText || error.message || 'Failed to update currency.' };
-  }
-}
-
 // --- LINK ACTIONS ---
 export async function getLinks() {
     try {
@@ -301,4 +279,28 @@ export async function getStripeBalance() {
         }
         return { success: false, message: error.bodyText || error.message || "Failed to fetch Stripe balance." };
     }
+}
+
+// Update User Currency
+export async function updateUserPayoutsInUsd(enabled) {
+  if (typeof enabled !== 'boolean') {
+    return { success: false, message: 'Invalid value for payout setting.' };
+  }
+
+  try {
+    // We reuse the '/users/profile' endpoint from the backend.
+    // Prisma will only update the fields we provide.
+    const response = await fetchProtectedDataFromServer('/users/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payoutsInUsd: enabled }),
+    });
+
+    // Revalidate the path to ensure the dashboard reflects the new state
+    revalidatePath('/dashboard/payments');
+    
+    return { success: true, message: `Payment currency set to ${enabled ? 'USD' : 'Native Currency'}.` };
+  } catch (error) {
+    return { success: false, message: error.bodyText || error.message || 'Failed to update currency preference.' };
+  }
 }
