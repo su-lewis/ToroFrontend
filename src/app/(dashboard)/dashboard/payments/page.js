@@ -136,6 +136,7 @@ export default function PaymentsPage() {
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Settings</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* --- CARD #1: Payment Currency --- */}
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <div>
@@ -155,6 +156,7 @@ export default function PaymentsPage() {
                         </div>
                         {!user?.stripeDefaultCurrency && <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-3">Connect to Stripe to enable native currency payments.</p>}
                     </div>
+                    {/* --- CARD #2: Payout Schedule --- */}
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <div>
@@ -178,6 +180,25 @@ export default function PaymentsPage() {
                     </div>
                 </div>
             </div>
+            
+            <div>
+                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payouts & Balance</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Available for Payout</h3>
+                        <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">{availableBalance ? formatCurrency(availableBalance.amount, availableBalance.currency) : '$0.00'}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your current Stripe balance.</p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Request Manual Payout</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">Instantly pay out your available balance now.</p>
+                        <button onClick={() => handleAction(triggerInstantPayout)} disabled={isActionLoading || !availableBalance || availableBalance.amount <= 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                            {isActionLoading ? 'Processing...' : 'Payout Now'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
 
             <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
