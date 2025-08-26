@@ -132,64 +132,6 @@ export default function PaymentsPage() {
                     <ArrowTopRightOnSquareIcon className="ml-2 h-4 w-4" />
                 </button>
             </div>
-            <div>
-                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Settings</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    {/* --- CARD #1: Payment Currency (No changes here, it's already correct) --- */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Receive Payments in USD</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {user?.payoutsInUsd ? "Donors will pay in USD ($)." : `Donors will pay in your native currency (${user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).`}
-                                </p>
-                            </div>
-                            <Switch
-                                checked={user?.payoutsInUsd ?? true}
-                                onChange={(enabled) => handleAction(updateUserPayoutsInUsd, enabled)}
-                                disabled={isActionLoading || !user?.stripeDefaultCurrency}
-                                className={`${user?.payoutsInUsd ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                                <span className={`${user?.payoutsInUsd ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
-                            </Switch>
-                        </div>
-                        {!user?.stripeDefaultCurrency && <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-3">Connect to Stripe to enable native currency payments.</p>}
-                    </div>
-
-                    {/* --- CARD #2: Payout Schedule (THIS IS THE UPDATED VERSION) --- */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Use Stripe Instant Payouts</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {user?.autoInstantPayoutsEnabled ? 'Enabled' : 'Disabled'}
-                                </p>
-                            </div>
-                            <Switch
-                                checked={user?.autoInstantPayoutsEnabled || false}
-                                onChange={(enabled) => handleAction(setInstantPayoutMode, enabled)}
-                                disabled={isActionLoading}
-                                className={`${user?.autoInstantPayoutsEnabled ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50`}
-                            >
-                                <span className={`${user?.autoInstantPayoutsEnabled ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
-                            </Switch>
-                        </div>
-                        {/* --- NEW: Conditional description based on the toggle state --- */}
-                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                            {user?.autoInstantPayoutsEnabled ? (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    When enabled, your available balance is automatically paid out instantly. A 1% Stripe fee applies, and funds typically arrive within 30 minutes.
-                                </p>
-                            ) : (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    When disabled, your available balance is automatically paid out on a standard daily schedule. Bank arrival typically takes 2-5 days and is free.
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payouts & Balance</h2>
