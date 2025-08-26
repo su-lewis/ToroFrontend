@@ -1,0 +1,15 @@
+# Git files (Vercel doesn't need these to build)
+.git
+.gitignore
+
+# Local environment files (these should be set in Vercel's UI)
+.env
+.env.*
+!.env.example
+
+# Documentation and local config
+README.md
+jsconfig.json
+
+# VS Code settings
+.vscode
