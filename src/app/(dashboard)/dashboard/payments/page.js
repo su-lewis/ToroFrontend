@@ -1,36 +1,32 @@
-// File: frontend/src/app/(dashboard)/dashboard/payments/page.js
+// File: frontend/src/app/(dashboard)/dashboard/payments/page.js (Final Version with Both Toggles)
 
 'use client';
 
-import { useState, useEffect, useTransition, useRef } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { 
     getPaymentStats, 
     getPaymentHistory, 
     createStripeDashboardLink,
     triggerInstantPayout,
-    toggleAutoPayouts,
     getUserSettings,
     getStripeBalance,
+    setInstantPayoutMode,
     updateUserPayoutsInUsd
 } from '@/app/actions';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Switch } from '@headlessui/react';
 
-// --- CORRECTED HELPER FUNCTION ---
 const formatCurrency = (cents, currency = 'USD') => {
     const displayCurrency = currency ? currency.toUpperCase() : 'USD';
     try {
-        // Apply the same fix here by removing 'en-US'
         return new Intl.NumberFormat(undefined, { 
             style: 'currency', 
             currency: displayCurrency 
         }).format(cents / 100);
     } catch (error) {
-        // This fallback is still good to have
         return `$${(cents / 100).toFixed(2)}`;
     }
 };
-
 
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -44,14 +40,9 @@ export default function PaymentsPage() {
     const [balance, setBalance] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-    
-    // FIX #1: Create separate loading states for each action
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
     const [isStatsLoading, setIsStatsLoading] = useState(false);
-    const [isDashboardLoading, setIsDashboardLoading] = useState(false);
-    const [isPayoutLoading, setIsPayoutLoading] = useState(false);
-    const [isToggleLoading, setIsToggleLoading] = useState(false);
-
+    const [isActionLoading, setIsActionLoading] = useState(false);
     const [timeframe, setTimeframe] = useState('30d');
     const [_, startTransition] = useTransition();
 
@@ -62,105 +53,58 @@ export default function PaymentsPage() {
             try {
                 const userResult = await getUserSettings();
                 if (!userResult.success) throw new Error(userResult.message);
-                setUser(userResult.data);
-                const userCurrency = userResult.data.payoutsInUsd ? 'usd' : (userResult.data.stripeDefaultCurrency || 'usd');
-
+                const currentUser = userResult.data;
+                setUser(currentUser);
+                const userCurrency = currentUser.payoutsInUsd ? 'usd' : (currentUser.stripeDefaultCurrency || 'usd');
                 const [statsResult, historyResult, balanceResult] = await Promise.all([
                     getPaymentStats(timeframe, userCurrency),
                     getPaymentHistory(),
                     getStripeBalance()
                 ]);
-
                 if (statsResult.success) setStats(statsResult.data);
                 if (historyResult.success) setHistory(historyResult.data);
                 if (balanceResult.success) setBalance(balanceResult.data);
-
             } catch (err) {
-                setError(err.message || 'Failed to load initial payment data. Please refresh the page.');
+                setError(err.message || 'Failed to load initial payment data.');
             } finally {
                 setIsLoadingInitial(false);
             }
         };
-        
         loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
- // --- CHANGE: A new handler for our new currency switch ---
-    const handleCurrencyToggle = (enabled) => {
-        // We can reuse the isToggleLoading state for this switch as well
-        setIsToggleLoading(true);
-        setError(null); setSuccess(null);
-        startTransition(async () => {
-            const result = await updateUserPayoutsInUsd(enabled);
-            if (result.success) {
-                setSuccess(result.message);
-                // Re-fetch user to get the latest state
-                const userResult = await getUserSettings();
-                if (userResult.success) setUser(userResult.data);
-            } else { 
-                setError(result.message); 
-            }
-            setIsToggleLoading(false);
-        });
-    };
-    
     const handleTimeframeChange = (newTimeframe) => {
         setTimeframe(newTimeframe);
         setIsStatsLoading(true);
         setError(null);
-
         startTransition(async () => {
-            const userCurrency = user?.defaultCurrency || 'usd';
+            const userCurrency = user.payoutsInUsd ? 'usd' : (user.stripeDefaultCurrency || 'usd');
             const result = await getPaymentStats(newTimeframe, userCurrency);
-            if (result.success) {
-                setStats(result.data);
-            } else {
-                setError(result.message);
-            }
+            if (result.success) setStats(result.data);
+            else setError(result.message);
             setIsStatsLoading(false);
         });
     };
 
-    const handleViewStripeDashboard = () => {
-        setIsDashboardLoading(true);
+    const handleAction = async (actionFn, ...args) => {
+        setIsActionLoading(true);
         setError(null); setSuccess(null);
-        startTransition(async () => {
-            const result = await createStripeDashboardLink();
-            if (result.success && result.url) {
-                window.open(result.url, '_blank', 'noopener,noreferrer');
-            } else { setError(result.message); }
-            setIsDashboardLoading(false);
-        });
-    };
-    
-    const handlePayoutNow = () => {
-        if (!window.confirm("This will attempt to instantly pay out your available Stripe balance. Stripe's 1% fee applies. Continue?")) return;
-        setIsPayoutLoading(true);
-        setError(null); setSuccess(null);
-        startTransition(async () => {
-            const result = await triggerInstantPayout();
+        await startTransition(async () => {
+            const result = await actionFn(...args);
             if (result.success) {
-                setSuccess(result.data.message + " Refreshing balance...");
-                const balanceResult = await getStripeBalance();
-                if (balanceResult.success) {
-                    setBalance(balanceResult.data);
+                if (result.url) window.open(result.url, '_blank', 'noopener,noreferrer');
+                if (result.message) setSuccess(result.message);
+                if (actionFn === triggerInstantPayout) {
+                    const balanceResult = await getStripeBalance();
+                    if (balanceResult.success) setBalance(balanceResult.data);
                 }
-            } else { setError(result.message); }
-            setIsPayoutLoading(false);
-        });
-    };
-
-    const handleToggleAutoPayouts = (enabled) => {
-        setIsToggleLoading(true);
-        setError(null); setSuccess(null);
-        startTransition(async () => {
-            const result = await toggleAutoPayouts(enabled);
-            if (result.success) {
-                setUser(prev => ({ ...prev, stripeAutoPayoutsEnabled: enabled }));
-                setSuccess(result.data.message);
-            } else { setError(result.message); }
-            setIsToggleLoading(false);
+                if (actionFn === setInstantPayoutMode || actionFn === updateUserPayoutsInUsd) {
+                    const userResult = await getUserSettings();
+                    if (userResult.success) setUser(userResult.data);
+                }
+            } else { setError(result.message || 'An unknown error occurred.'); }
+            setIsActionLoading(false);
         });
     };
 
@@ -179,78 +123,58 @@ export default function PaymentsPage() {
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Payment & Payouts</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">View your revenue and manage how you get paid.</p>
                 </div>
-                {/* FIX #2: Connect button's loading state to its specific variable */}
                 <button
-                    onClick={handleViewStripeDashboard}
-                    disabled={isDashboardLoading}
+                    onClick={() => handleAction(createStripeDashboardLink)}
+                    disabled={isActionLoading}
                     className="w-full md:w-auto inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md text-sm disabled:opacity-70"
                 >
-                    {isDashboardLoading ? 'Loading...' : 'Manage on Stripe'}
+                    {isActionLoading ? 'Please wait...' : 'Manage on Stripe'}
                     <ArrowTopRightOnSquareIcon className="ml-2 h-4 w-4"/>
                 </button>
             </div>
-
-             <div>
-                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payment Currency</h2>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Receive Payments in USD</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                {user?.payoutsInUsd 
-                                    ? "Donors will see and pay in USD ($)." 
-                                    : `Donors will see and pay in your native currency (${user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).`
-                                }
-                            </p>
-                        </div>
-                        <Switch
-                            checked={user?.payoutsInUsd ?? true} // Default to true if user object is loading
-                            onChange={handleCurrencyToggle}
-                            disabled={isToggleLoading || !user?.stripeDefaultCurrency}
-                            className={`${user?.payoutsInUsd ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            <span className={`${user?.payoutsInUsd ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
-                        </Switch>
-                    </div>
-                    {!user?.stripeDefaultCurrency && <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-3">Connect to Stripe to enable native currency payments.</p>}
-                </div>
-            </div>
             
             <div>
-                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payouts & Balance</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Available for Payout</h3>
-                            <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
-                                {availableBalance ? formatCurrency(availableBalance.amount, availableBalance.currency) : '$0.00'}
-                            </p>
-                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your current Stripe balance.</p>
-                        </div>
-                    </div>
-                    <div className="lg:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Request Instant Payout</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
-                            Instantly pay out your available balance.
-                        </p>
-                        <button onClick={handlePayoutNow} disabled={isPayoutLoading || !availableBalance || availableBalance.amount <= 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isPayoutLoading ? 'Processing...' : 'Payout Now'}
-                        </button>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">Stripe applies a 1% fee.</p>
-                    </div>
-                    <div className="lg:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Automatic Payouts</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
-                            Enable for automatic daily standard payouts.
-                        </p>
-                        <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
-                            <span className="font-medium text-gray-700 dark:text-gray-200">
-                                {user?.stripeAutoPayoutsEnabled ? 'Auto Payouts: ON' : 'Auto Payouts: OFF'}
-                            </span>
-                            <Switch checked={user?.stripeAutoPayoutsEnabled || false} onChange={handleToggleAutoPayouts} disabled={isToggleLoading} className={`${user?.stripeAutoPayoutsEnabled ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50`}>
-                                <span className={`${user?.stripeAutoPayoutsEnabled ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Settings</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Receive Payments in USD</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    {user?.payoutsInUsd ? "Donors will pay in USD ($)." : `Donors will pay in your native currency (${user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).`}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={user?.payoutsInUsd ?? true}
+                                onChange={(enabled) => handleAction(updateUserPayoutsInUsd, enabled)}
+                                disabled={isActionLoading || !user?.stripeDefaultCurrency}
+                                className={`${user?.payoutsInUsd ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                                <span className={`${user?.payoutsInUsd ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
                             </Switch>
                         </div>
+                        {!user?.stripeDefaultCurrency && <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-3">Connect to Stripe to enable native currency payments.</p>}
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Automatic Payout Mode</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    {user?.autoInstantPayoutsEnabled ? 'Instant Payouts (1% fee)' : 'Standard Payouts (Daily)'}
+                                </p>
+                            </div>
+                            <Switch 
+                                checked={user?.autoInstantPayoutsEnabled || false} 
+                                onChange={(enabled) => handleAction(setInstantPayoutMode, enabled)} 
+                                disabled={isActionLoading} 
+                                className={`${user?.autoInstantPayoutsEnabled ? 'bg-green-600' : 'bg-blue-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50`}
+                            >
+                                <span className={`${user?.autoInstantPayoutsEnabled ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                            </Switch>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                            Note: Standard payouts are batched daily, but bank arrival can take 2-5 days.
+                        </p>
                     </div>
                 </div>
             </div>

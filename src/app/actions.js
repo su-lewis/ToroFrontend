@@ -199,17 +199,41 @@ export async function triggerInstantPayout() {
     }
 }
 
-export async function toggleAutoPayouts(enabled) {
-    try {
-        const response = await fetchProtectedDataFromServer('/stripe/payouts/toggle-auto', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ autoPayoutsEnabled: enabled }),
-        });
-        return { success: true, data: response };
-    } catch (error) {
-        return { success: false, message: error.bodyText || error.message || "Failed to update auto-payout setting." };
-    }
+
+// --- ACTION #1: For the Payment Currency Toggle ---
+export async function updateUserPayoutsInUsd(enabled) {
+  if (typeof enabled !== 'boolean') {
+    return { success: false, message: 'Invalid value for payout setting.' };
+  }
+  try {
+    await fetchProtectedDataFromServer('/users/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payoutsInUsd: enabled }),
+    });
+    revalidatePath('/dashboard/payments');
+    return { success: true, message: `Payment currency set to ${enabled ? 'USD' : 'Native Currency'}.` };
+  } catch (error) {
+    return { success: false, message: error.bodyText || 'Failed to update currency preference.' };
+  }
+}
+
+// --- ACTION #2: For the Payout Schedule Toggle ---
+export async function setInstantPayoutMode(enabled) {
+  if (typeof enabled !== 'boolean') {
+    return { success: false, message: 'Invalid value.' };
+  }
+  try {
+    await fetchProtectedDataFromServer('/stripe/payouts/toggle-mode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instantPayoutsEnabled: enabled }),
+    });
+    revalidatePath('/dashboard/payments');
+    return { success: true, message: 'Payout mode updated.' };
+  } catch (error) {
+    return { success: false, message: error.bodyText || 'Failed to update payout mode.' };
+  }
 }
 
 // --- LINK ACTIONS ---
@@ -279,28 +303,4 @@ export async function getStripeBalance() {
         }
         return { success: false, message: error.bodyText || error.message || "Failed to fetch Stripe balance." };
     }
-}
-
-// Update User Currency
-export async function updateUserPayoutsInUsd(enabled) {
-  if (typeof enabled !== 'boolean') {
-    return { success: false, message: 'Invalid value for payout setting.' };
-  }
-
-  try {
-    // We reuse the '/users/profile' endpoint from the backend.
-    // Prisma will only update the fields we provide.
-    const response = await fetchProtectedDataFromServer('/users/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payoutsInUsd: enabled }),
-    });
-
-    // Revalidate the path to ensure the dashboard reflects the new state
-    revalidatePath('/dashboard/payments');
-    
-    return { success: true, message: `Payment currency set to ${enabled ? 'USD' : 'Native Currency'}.` };
-  } catch (error) {
-    return { success: false, message: error.bodyText || error.message || 'Failed to update currency preference.' };
-  }
 }
