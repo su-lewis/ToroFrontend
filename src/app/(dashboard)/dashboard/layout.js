@@ -1,20 +1,31 @@
+// File: frontend/src/app/(dashboard)/dashboard/layout.js (Final Corrected Version)
+
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { ChartBarIcon, LinkIcon as LinkIconOutline, Cog6ToothIcon, ArrowRightOnRectangleIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { 
+    ChartBarIcon, 
+    LinkIcon as LinkIconOutline, 
+    Cog6ToothIcon, 
+    ArrowRightOnRectangleIcon, 
+    UserCircleIcon,
+    CreditCardIcon, // For the "Setup Payments" link
+    ExclamationTriangleIcon, // For the warning banner
+    KeyIcon
+} from '@heroicons/react/24/outline';
 import { fetchProtectedDataFromServer } from '@/lib/server-api';
 import { handleLogout } from '@/app/actions';
-import ThemeSwitcher from '@/components/ThemeSwitcher'; // Assuming you created this component
-import { KeyIcon } from '@heroicons/react/24/outline'; 
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 export default async function DashboardLayout({ children }) {
   const cookieStore = cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { cookies: { get(name) { return cookieStore.get(name)?.value; }, set(name, value, options) { try { cookieStore.set({ name, value, ...options }); } catch (error) {} }, remove(name, options) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) {} }, } }
+    { cookies: { get(name) { return cookieStore.get(name)?.value; } } }
   );
+
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) { redirect('/login'); }
   
@@ -22,44 +33,60 @@ export default async function DashboardLayout({ children }) {
   try {
     userProfile = await fetchProtectedDataFromServer('/users/me');
   } catch (error) {
-    if (error.status !== 404) { console.error("DashboardLayout: Error fetching user profile:", error.message); }
+    if (error.status === 404) {
+      // If profile is not found, force user to the creation page
+      return redirect('/dashboard/profile');
+    }
+    console.error("DashboardLayout: Error fetching user profile:", error.message);
+    // If there's another error, we can show a generic error state or redirect
+    // For now, redirecting to login might be safest
+    return redirect('/login?error=profile_fetch_failed');
   }
   
-  const isStripeOnboarded = userProfile?.stripeOnboardingComplete === true;
-  const paymentsLinkUrl = isStripeOnboarded ? '/dashboard/payments' : '/connect-stripe';
+  if (!userProfile) {
+    return redirect('/dashboard/profile');
+  }
+
+  const isStripeOnboardingComplete = userProfile.stripeOnboardingComplete;
+  
+  // Your existing navigation links, now in an array for easier management
+  const navLinks = [
+      { name: 'My Profile', href: '/dashboard/profile', icon: UserCircleIcon },
+      { name: 'Manage Links', href: '/dashboard/links', icon: LinkIconOutline },
+      { 
+        name: isStripeOnboardingComplete ? 'Payments' : 'Setup Payments', 
+        href: isStripeOnboardingComplete ? '/dashboard/payments' : '/dashboard/connect-stripe', 
+        icon: isStripeOnboardingComplete ? ChartBarIcon : CreditCardIcon,
+        needsSetup: !isStripeOnboardingComplete 
+      },
+      { name: 'Account Security', href: '/dashboard/account-settings', icon: KeyIcon },
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-100 dark:bg-gray-900">
-      <aside className="w-full md:w-64 bg-white dark:bg-gray-800 shadow-lg p-4 flex flex-col">
-        <div className="flex justify-between items-center mb-8">
-          <Link href="/dashboard" className="text-2xl font-bold text-blue-600 dark:text-blue-400 p-2 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+      
+      {/* Sidebar: Fixed position, flex column */}
+      <aside className="w-64 bg-white dark:bg-gray-800 shadow-lg flex flex-col flex-shrink-0">
+        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+          <Link href="/dashboard" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             TributeToro
           </Link>
-          <ThemeSwitcher /> {/* Added Theme Switcher */}
+          <ThemeSwitcher />
         </div>
-        <nav className="space-y-1 flex-grow">
-          <Link href="/dashboard" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white rounded-md transition-colors">
-            <UserCircleIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-white" /> 
-            <span className="font-medium">Overview</span>
-          </Link>
-          <Link href="/dashboard/profile" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white rounded-md transition-colors">
-            <Cog6ToothIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-white" /> 
-            <span className="font-medium">Profile Settings</span>
-          </Link>
-          <Link href="/dashboard/links" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white rounded-md transition-colors">
-            <LinkIconOutline className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-white" /> 
-            <span className="font-medium">Manage Links</span>
-          </Link>
-          <Link href={paymentsLinkUrl} className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white rounded-md transition-colors">
-            <ChartBarIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-white" />
-            <span className="font-medium">Payments</span>
-          </Link>
-        <Link href="/dashboard/account-settings" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white rounded-md transition-colors">
-        <KeyIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-white" /> 
-        <span className="font-medium">Account Security</span>
-    </Link>
-</nav>
-        <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700">
+        <nav className="flex-grow p-4 space-y-2">
+          {navLinks.map((link) => (
+            <Link key={link.name} href={link.href} className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white rounded-md transition-colors">
+              <link.icon className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-white" />
+              <span className="font-medium">{link.name}</span>
+              {link.needsSetup && (
+                <span className="ml-auto text-xs font-semibold text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/50 px-2 py-0.5 rounded-full">
+                  Action
+                </span>
+              )}
+            </Link>
+          ))}
+        </nav>
+        <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
           <form action={handleLogout}>
             <button type="submit" className="group flex items-center space-x-3 w-full px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 rounded-md transition-colors">
               <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400" /> 
@@ -69,9 +96,29 @@ export default async function DashboardLayout({ children }) {
            {session?.user?.email && ( <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 p-2 text-center break-all">{session.user.email}</p> )}
         </div>
       </aside>
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto">
-        {children}
-      </main>
+
+      {/* --- THIS IS THE SCROLLING FIX --- */}
+      {/* This new div wraps the main content and handles all scrolling */}
+      <div className="flex-1 flex flex-col overflow-y-auto">
+        <main className="flex-1 p-6 md:p-10">
+          {/* Persistent Warning Banner */}
+          {!isStripeOnboardingComplete && (
+              <div className="mb-8 p-4 bg-yellow-100 dark:bg-yellow-900/40 border border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300 rounded-lg flex items-center">
+                  <ExclamationTriangleIcon className="h-6 w-6 mr-3 flex-shrink-0" />
+                  <div>
+                      <h3 className="font-bold">Complete Your Payment Setup</h3>
+                      <p className="text-sm">You must connect Stripe to receive payments and access your analytics.</p>
+                      <Link href="/dashboard/connect-stripe" className="mt-2 inline-block text-sm font-bold text-yellow-900 dark:text-yellow-200 underline hover:no-underline">
+                          Continue Setup &rarr;
+                      </Link>
+                  </div>
+              </div>
+          )}
+          {/* The page content (e.g., ProfileForm) is rendered here and can now scroll freely */}
+          {children}
+        </main>
+      </div>
+      
     </div>
   );
 }
