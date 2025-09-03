@@ -22,7 +22,7 @@ export const metadata = {
   //   siteName: 'Your Site Name',
   //   images: [
   //     {
-  //       url: 'https://your-live-domain.com/og-image.png', // A URL to a default sharing image
+  //       url: 'https://your-live-domain.com/og-image.png', // A URL to a default sharing image.
   //       width: 1200,
   //       height: 630,
   //     },
