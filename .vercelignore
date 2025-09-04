@@ -9,7 +9,6 @@
 
 # Documentation and local config
 README.md
-jsconfig.json
 
 # VS Code settings
 .vscode
