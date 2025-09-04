@@ -5,12 +5,12 @@ import SendTipButton from '@/components/SendTipButton';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { useTheme } from 'next-themes';
 
-// Define our default colors for easy reference
-const DEFAULT_DARK_BG = '#111827';
-const DEFAULT_LIGHT_BG = '#F9FAFB'; // A light gray, like Tailwind's gray-50
+// These are our default colors
+const DEFAULT_DARK_BG = '#111827';  // Tailwind gray-900
+const DEFAULT_LIGHT_BG = '#F9FAFB'; // Tailwind gray-50
+const OLD_DEFAULT_BG = '#FFFFFF';   // The old white default
 
 export default function PublicProfileClient({ profileData, paymentCancelled }) {
-  // This hook can only be used in a Client Component
   const { resolvedTheme } = useTheme();
 
   // Destructure all the data passed from the server page
@@ -23,24 +23,31 @@ export default function PublicProfileClient({ profileData, paymentCancelled }) {
     links = [],
     stripeAccountId,
     stripeOnboardingComplete,
-    profileBackgroundColor = DEFAULT_DARK_BG, // Default to dark if not set
+    profileBackgroundColor,
     payoutsInUsd,
     stripeDefaultCurrency,
   } = profileData;
 
   // This logic is also from your original file
-  const effectiveDisplayName = displayName || username;
+  const effectiveDisplayName = profileData.displayName || profileData.username;
 
   // --- THIS IS THE CORE FIX ---
   // 1. Start with the color from the database.
-  let finalBackgroundColor = profileBackgroundColor;
+  let finalBackgroundColor;
 
-  // 2. If the user's color is the default dark one, AND the current theme is light...
-  if (profileBackgroundColor === DEFAULT_DARK_BG && resolvedTheme === 'light') {
-    // ...then override it with the default light color.
-    finalBackgroundColor = DEFAULT_LIGHT_BG;
+  // 1. Check if the user has a custom color set.
+  // A color is considered "not custom" if it's the new dark default OR the old white default.
+  const hasCustomColor = profileBackgroundColor &&
+    profileBackgroundColor.toUpperCase() !== DEFAULT_DARK_BG.toUpperCase() &&
+    profileBackgroundColor.toUpperCase() !== OLD_DEFAULT_BG.toUpperCase();
+
+  if (hasCustomColor) {
+    // 2. If they have a custom color, ALWAYS use it.
+    finalBackgroundColor = profileBackgroundColor;
+  } else {
+    // 3. Otherwise, apply the theme-appropriate default.
+    finalBackgroundColor = resolvedTheme === 'light' ? DEFAULT_LIGHT_BG : DEFAULT_DARK_BG;
   }
-  // Otherwise, we always respect the custom color the user has set.
 
   const pageStyle = { backgroundColor: finalBackgroundColor };
 
@@ -48,7 +55,10 @@ export default function PublicProfileClient({ profileData, paymentCancelled }) {
   return (
     <main style={pageStyle} className="min-h-screen transition-colors duration-500">
       <div className="container mx-auto max-w-3xl flex flex-col items-center pb-12">
-        <div className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg bg-gray-300 dark:bg-gray-700">
+        <div
+          className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg"
+          style={{ backgroundColor: '#D1D5DB' }} // This is Tailwind's gray-300 color
+        >
           {bannerImageUrl && <Image src={bannerImageUrl} alt={`${effectiveDisplayName}'s banner`} layout="fill" className="object-cover" priority={true} />}
         </div>
 
