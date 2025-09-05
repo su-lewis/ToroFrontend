@@ -1,11 +1,9 @@
-// File: frontend/src/app/(dashboard)/dashboard/payments/page.js (Final Corrected Version)
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
 import { 
     getPaymentStats, 
-    getPaymentHistory, 
+    getUnifiedHistory,
     createStripeDashboardLink,
     triggerInstantPayout,
     getUserSettings,
@@ -13,16 +11,17 @@ import {
     setInstantPayoutMode,
     updateUserPayoutsInUsd
 } from '@/app/actions';
-import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { 
+    ArrowTopRightOnSquareIcon,
+    ArrowDownCircleIcon,
+    ArrowUpCircleIcon,
+    ExclamationCircleIcon,
+} from '@heroicons/react/24/outline'; // Using outline for consistency
 import { Switch } from '@headlessui/react';
 
 const formatCurrency = (cents, currency = 'USD') => {
-    const displayCurrency = currency ? currency.toUpperCase() : 'USD';
     try {
-        return new Intl.NumberFormat(undefined, { 
-            style: 'currency', 
-            currency: displayCurrency 
-        }).format(cents / 100);
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency.toUpperCase() }).format(cents / 100);
     } catch (error) {
         return `$${(cents / 100).toFixed(2)}`;
     }
@@ -30,7 +29,7 @@ const formatCurrency = (cents, currency = 'USD') => {
 
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
 export default function PaymentsPage() {
@@ -56,11 +55,13 @@ export default function PaymentsPage() {
                 const currentUser = userResult.data;
                 setUser(currentUser);
                 const userCurrency = currentUser.payoutsInUsd ? 'usd' : (currentUser.stripeDefaultCurrency || 'usd');
+                
                 const [statsResult, historyResult, balanceResult] = await Promise.all([
                     getPaymentStats(timeframe, userCurrency),
-                    getPaymentHistory(),
+                    getUnifiedHistory(), // Use the new unified history action
                     getStripeBalance()
                 ]);
+
                 if (statsResult.success) setStats(statsResult.data);
                 if (historyResult.success) setHistory(historyResult.data);
                 if (balanceResult.success) setBalance(balanceResult.data);
@@ -108,6 +109,24 @@ export default function PaymentsPage() {
         });
     };
 
+    // Helper function to dynamically style each transaction item
+    const getTransactionRowDetails = (item) => {
+        if (item.type === 'PAYMENT') {
+            switch(item.status) {
+                case 'SUCCEEDED': return { icon: ArrowDownCircleIcon, color: 'text-green-500', amountPrefix: '+', title: 'Gift Received' };
+                case 'REFUNDED': return { icon: ExclamationCircleIcon, color: 'text-yellow-500', amountPrefix: '-', title: 'Payment Refunded' };
+                case 'DISPUTED': return { icon: ExclamationCircleIcon, color: 'text-red-500', amountPrefix: '', title: 'Payment Disputed' };
+            }
+        }
+        if (item.type === 'PAYOUT') {
+            switch(item.status) {
+                case 'PAID': return { icon: ArrowUpCircleIcon, color: 'text-blue-500', amountPrefix: '-', title: 'Payout Sent' };
+                case 'FAILED': return { icon: ExclamationCircleIcon, color: 'text-red-500', amountPrefix: '', title: 'Payout Failed' };
+            }
+        }
+        return { icon: ExclamationCircleIcon, color: 'text-gray-500', amountPrefix: '', title: 'Transaction' };
+    };
+
     const availableBalance = balance?.available?.[0];
     const periodStats = stats?.period;
 
@@ -133,11 +152,9 @@ export default function PaymentsPage() {
                 </button>
             </div>
 
-            {/* --- THIS IS THE CORRECTED SETTINGS SECTION --- */}
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Settings</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* --- CARD #1: Payment Currency --- */}
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <div>
@@ -156,26 +173,15 @@ export default function PaymentsPage() {
                             </Switch>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                            {user?.payoutsInUsd ? (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    When enabled, donors will see and pay in US Dollars ($). This is recommended for a global audience.
-                                </p>
-                            ) : (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    When disabled, donors will see and pay in your Stripe account's native currency ({user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).
-                                </p>
-                            )}
+                            {user?.payoutsInUsd ? (<p className="text-xs text-gray-500 dark:text-gray-400">When enabled, donors will see and pay in US Dollars ($).</p>) 
+                            : (<p className="text-xs text-gray-500 dark:text-gray-400">When disabled, donors will see and pay in your native currency ({user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).</p>)}
                         </div>
-                        {!user?.stripeDefaultCurrency && <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-3">Connect to Stripe to see your native currency.</p>}
                     </div>
-                    {/* --- CARD #2: Payout Schedule --- */}
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Use Stripe Instant Payouts</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {user?.autoInstantPayoutsEnabled ? 'Enabled' : 'Disabled'}
-                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{user?.autoInstantPayoutsEnabled ? 'Enabled' : 'Disabled'}</p>
                             </div>
                             <Switch 
                                 checked={user?.autoInstantPayoutsEnabled || false} 
@@ -187,15 +193,8 @@ export default function PaymentsPage() {
                             </Switch>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                             {user?.autoInstantPayoutsEnabled ? (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Your available balance will be paid out instantly. A 1% Stripe fee applies, and funds typically arrive within 30 minutes.
-                                </p>
-                            ) : (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Your available balance will be paid out on a standard daily schedule. Bank arrival typically takes 2-5 days and is free.
-                                </p>
-                            )}
+                             {user?.autoInstantPayoutsEnabled ? (<p className="text-xs text-gray-500 dark:text-gray-400">Your available balance will be paid out instantly (1% fee, ~30 min).</p>) 
+                             : (<p className="text-xs text-gray-500 dark:text-gray-400">Your balance will be paid out on a standard daily schedule (Free, ~2-5 days).</p>)}
                         </div>
                     </div>
                 </div>
@@ -219,27 +218,18 @@ export default function PaymentsPage() {
                 </div>
             </div>
 
-
             <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
                     <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Statistics</h2>
                     <div className="flex space-x-1 bg-gray-200 dark:bg-gray-700 p-1 rounded-lg">
-                        {['Today', '7d', '30d'].map((periodLabel) => {
-                            const periodValue = periodLabel.toLowerCase();
-                            return (
-                                <button
-                                    key={periodValue}
-                                    onClick={() => handleTimeframeChange(periodValue)}
-                                    disabled={isStatsLoading}
-                                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 ${timeframe === periodValue
-                                            ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow'
-                                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-300/50 dark:hover:bg-gray-600/50'
-                                        }`}
-                                >
-                                    {isStatsLoading && timeframe === periodValue ? '...' : periodLabel}
-                                </button>
-                            )
-                        })}
+                        {['today', '7d', '30d'].map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => handleTimeframeChange(p)}
+                                disabled={isStatsLoading}
+                                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 ${timeframe === p ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-300/50 dark:hover:bg-gray-600/50'}`}
+                            >{isStatsLoading && timeframe === p ? '...' : p.charAt(0).toUpperCase() + p.slice(1)}</button>
+                        ))}
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -249,33 +239,39 @@ export default function PaymentsPage() {
                         <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">from {stats?.allTime?.giftCount || 0} gifts</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                            {timeframe === 'today' && 'Today'}
-                            {timeframe === '7d' && 'Last 7 Days'}
-                            {timeframe === '30d' && 'Last 30 Days'}
-                        </h3>
-                        <p className={`text-3xl font-bold mt-2 transition-colors ${isStatsLoading ? 'text-gray-400 animate-pulse' : 'text-gray-800 dark:text-gray-100'}`}>
-                            {formatCurrency(periodStats?.revenueCents || 0, periodStats?.currency)}
-                        </p>
-                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">from {periodStats?.giftCount || 0} gifts</p>
+                        <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">{stats?.period.timeframe === 'today' ? 'Today' : `Last ${stats?.period.timeframe}`}</h3>
+                        <p className={`text-3xl font-bold mt-2 transition-colors ${isStatsLoading ? 'text-gray-400 animate-pulse' : 'text-gray-800 dark:text-gray-100'}`}>{formatCurrency(stats?.period?.revenueCents || 0, stats?.period?.currency)}</p>
+                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">from {stats?.period?.giftCount || 0} gifts</p>
                     </div>
                 </div>
             </div>
-
+            
+            {/* --- NEW, UNIFIED TRANSACTION HISTORY SECTION --- */}
             <div>
-                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Gift History</h2>
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gray-50 dark:bg-gray-700/50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">From</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th></tr></thead>
-                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                {history.length > 0 ? (
-                                    history.map((p) => (<tr key={p.id}><td className="px-6 py-4 text-sm">{formatDate(p.createdAt)}</td><td className="px-6 py-4 font-medium">{p.payerName || 'Anonymous'}</td><td className="px-6 py-4 text-right font-semibold text-green-600 dark:text-green-400">{formatCurrency(p.netAmountToRecipient, p.currency)}</td></tr>))
-                                ) : (
-                                    <tr><td colSpan="3" className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">You haven't received any gifts yet.</td></tr>
-                                )}
-                            </tbody>
-                        </table>
+                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Transaction History</h2>
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {history.length > 0 ? (
+                            history.map((item) => {
+                                const { icon: Icon, color, amountPrefix, title } = getTransactionRowDetails(item);
+                                return (
+                                    <div key={item.id} className="p-4 flex items-center justify-between space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <div className="flex items-center space-x-4 min-w-0">
+                                            <Icon className={`h-8 w-8 flex-shrink-0 ${color}`} />
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">{title}</p>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{item.description} &middot; {formatDate(item.date)}</p>
+                                            </div>
+                                        </div>
+                                        <p className={`text-lg font-semibold whitespace-nowrap ${color}`}>
+                                            {amountPrefix}{formatCurrency(item.amount, item.currency)}
+                                        </p>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <p className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No transactions to display yet.</p>
+                        )}
                     </div>
                 </div>
             </div>

@@ -304,3 +304,13 @@ export async function getStripeBalance() {
         return { success: false, message: error.bodyText || error.message || "Failed to fetch Stripe balance." };
     }
 }
+
+export async function getUnifiedHistory() {
+    try {
+        // Note: This now calls the new unified endpoint in payments.js
+        const history = await fetchProtectedDataFromServer('/payments/history');
+        return { success: true, data: history };
+    } catch (error) {
+        return { success: false, message: error.bodyText || error.message || "Failed to fetch transaction history." };
+    }
+}
