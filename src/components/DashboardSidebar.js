@@ -37,7 +37,9 @@ export default function DashboardSidebar({ userProfile, session }) {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
               Tribute
             </span>
-            {/* This ensures "Toro" is dark on light mode and white on dark mode */}
+            {/* --- THE FIX --- */}
+            {/* Add an explicit space between the two spans */}
+            {' '}
             <span className="text-gray-800 dark:text-white">
               Toro
             </span>
