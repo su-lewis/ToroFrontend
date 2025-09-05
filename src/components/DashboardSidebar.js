@@ -22,19 +22,21 @@ export default function DashboardSidebar({ userProfile, session }) {
   const paymentsLinkUrl = isStripeOnboarded ? '/dashboard/payments' : '/connect-stripe';
 
   return (
-    // The main <aside> is always present, but its contents will be controlled.
-    // It is a flex container with a direction of column.
-    <aside className="w-full md:w-64 bg-white dark:bg-gray-800 shadow-lg p-4 flex flex-col">
+    // --- FIX 1: The main <aside> container ---
+    // On mobile, this is just a block element whose height is determined by its content.
+    // On desktop (md:), it becomes a flex container, filling the screen's height.
+    <aside className="w-full md:w-64 bg-white dark:bg-gray-800 shadow-lg p-4 md:flex md:flex-col md:min-h-screen">
+      
+      {/* The header is always visible */}
       <div className="flex justify-between items-center">
-        <Link href="/dashboard" className="text-2xl font-bold text-blue-600 dark:text-blue-400 p-2 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+        <Link href="/dashboard" className="text-2xl font-bold text-blue-600 dark:text-blue-400 p-2 hover:text-blue-700 dark:hover:text-blue-300">
           TributeToro
         </Link>
-        
         <div className="flex items-center gap-2">
             <ThemeSwitcher />
             <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)} 
-                className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 md:hidden"
+                className="p-2 rounded-md md:hidden" // Only show on mobile
                 aria-label="Toggle menu"
             >
                 {isMenuOpen ? (
@@ -46,18 +48,14 @@ export default function DashboardSidebar({ userProfile, session }) {
         </div>
       </div>
 
-      {/* --- THIS IS THE CORRECTED LOGIC --- */}
-      {/* 
-        This div wraps all collapsible content.
-        - `hidden`: It is hidden by default (mobile-first approach).
-        - `md:flex`: On medium screens and up, it becomes a flex container.
-        - `flex-grow flex-col justify-between`: These classes describe its layout when it IS visible.
-        - `${isMenuOpen ? 'flex' : 'hidden'}`: This dynamically adds 'flex' (making it visible) or 'hidden'
-          on mobile, based on the `isMenuOpen` state. On desktop, `md:flex` will always take precedence over `hidden`.
-      */}
-      <div className={`mt-4 flex-grow flex-col justify-between ${isMenuOpen ? 'flex' : 'hidden'} md:flex`}>
-        <nav className="space-y-1">
-          {/* Your Link components go here... no changes needed */}
+      {/* --- FIX 2: The collapsible content wrapper --- */}
+      {/* This is the key change. */}
+      <div className={`
+          flex-col justify-between flex-grow
+          ${isMenuOpen ? 'flex' : 'hidden'}  /* On mobile: display: flex IF open, otherwise display: none */
+          md:flex                          /* On desktop: ALWAYS display: flex, overriding the 'hidden' state */
+        `}>
+        <nav className="space-y-1 mt-4"> {/* Added mt-4 here for spacing */}
           <Link href="/dashboard" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md">
             <UserCircleIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" /> 
             <span className="font-medium">Overview</span>
@@ -80,7 +78,7 @@ export default function DashboardSidebar({ userProfile, session }) {
           </Link>
         </nav>
 
-        <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"> {/* Added mt-4 */}
           <form action={handleLogout}>
             <button type="submit" className="group flex items-center space-x-3 w-full px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md">
               <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" /> 
