@@ -164,13 +164,25 @@ export async function getStripeStatus() {
     }
 }
 
-export async function createStripeOnboardLink() {
+// --- MODIFY THIS ACTION ---
+export async function createStripeOnboardLink(formData) { // <-- It now accepts formData
     try {
+        const country = formData.get('country'); // <-- Get the country from the form data
+        if (!country) {
+            return { success: false, message: 'Country selection is required.' };
+        }
+
         const response = await fetchProtectedDataFromServer('/stripe/connect/onboard-user', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ country: country }), // <-- Pass the country in the body
         });
-        if (response.url) { return { success: true, url: response.url }; } 
-        else { throw new Error("Onboarding URL not found in API response."); }
+        
+        if (response.url) { 
+            return { success: true, url: response.url }; 
+        } else { 
+            throw new Error("Onboarding URL not found in API response."); 
+        }
     } catch (error) {
         return { success: false, message: error.bodyText || error.message || 'Failed to start Stripe connection.' };
     }
