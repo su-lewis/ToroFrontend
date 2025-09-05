@@ -32,9 +32,13 @@ export default function DashboardSidebar({ userProfile, session }) {
     ? '/dashboard/profile' // If profile is incomplete, send them to the profile page first
     : (userProfile?.stripeOnboardingComplete ? '/dashboard/payments' : '/connect-stripe'); // Otherwise, use the existing Stripe logic
 
+  
   return (
-    <aside className="w-full bg-white dark:bg-gray-800 shadow-lg md:w-64 md:flex md:flex-col md:h-screen md:p-4">
-      
+    <aside className="
+        w-full bg-white dark:bg-gray-800 shadow-lg 
+        md:flex md:flex-col md:h-screen md:p-4 
+        md:fixed md:top-0 md:left-0 md:w-64
+    ">
       <div className="flex justify-between items-center p-4">
         <Link href="/dashboard" onClick={handleLinkClick}>
           <div className="text-2xl font-bold">
