@@ -2,12 +2,10 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';
 import { fetchProtectedDataFromServer } from '@/lib/server-api';
-// --- THIS IS THE FIX ---
-// Import the new sidebar component
-import DashboardSidebar from '@/components/DashboardSidebar';
+import DashboardSidebar from '@/components/DashboardSidebar'; // We will still use this component
 
 export default async function DashboardLayout({ children }) {
-  // All this server-side data fetching and session checking remains here
+  // --- Data fetching logic remains identical ---
   const cookieStore = cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -25,10 +23,12 @@ export default async function DashboardLayout({ children }) {
   }
   
   return (
+    // --- THIS IS THE KEY LAYOUT FIX ---
+    // On mobile (default), it's a flex column.
+    // On desktop (md:), it becomes a flex row.
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-100 dark:bg-gray-900">
       
-      {/* --- THIS IS THE FIX --- */}
-      {/* Replace the entire <aside> block with the new component, passing data as props */}
+      {/* This component will now act as a header on mobile and a sidebar on desktop */}
       <DashboardSidebar userProfile={userProfile} session={session} />
       
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">

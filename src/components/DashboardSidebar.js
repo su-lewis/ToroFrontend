@@ -22,40 +22,45 @@ export default function DashboardSidebar({ userProfile, session }) {
   const paymentsLinkUrl = isStripeOnboarded ? '/dashboard/payments' : '/connect-stripe';
 
   return (
-    // --- FIX 1: The main <aside> container ---
-    // On mobile, this is just a block element whose height is determined by its content.
-    // On desktop (md:), it becomes a flex container, filling the screen's height.
-    <aside className="w-full md:w-64 bg-white dark:bg-gray-800 shadow-lg p-4 md:flex md:flex-col md:min-h-screen">
+    // --- FIX 1: The main container ---
+    // It's a header on mobile (relative positioning for the dropdown)
+    // It becomes a full-height sidebar on desktop (md:)
+    <aside className="bg-white dark:bg-gray-800 shadow-md relative z-10 
+                     md:w-64 md:flex md:flex-col md:h-screen">
       
-      {/* The header is always visible */}
-      <div className="flex justify-between items-center">
-        <Link href="/dashboard" className="text-2xl font-bold text-blue-600 dark:text-blue-400 p-2 hover:text-blue-700 dark:hover:text-blue-300">
+      {/* This part contains the always-visible header content */}
+      <div className="flex justify-between items-center p-4">
+        <Link href="/dashboard" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
           TributeToro
         </Link>
         <div className="flex items-center gap-2">
-            <ThemeSwitcher />
-            <button 
-                onClick={() => setIsMenuOpen(!isMenuOpen)} 
-                className="p-2 rounded-md md:hidden" // Only show on mobile
-                aria-label="Toggle menu"
-            >
-                {isMenuOpen ? (
-                    <XMarkIcon className="h-6 w-6 text-gray-800 dark:text-gray-200" />
-                ) : (
-                    <Bars3Icon className="h-6 w-6 text-gray-800 dark:text-gray-200" />
-                )}
-            </button>
+          <ThemeSwitcher />
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)} 
+            className="p-1 rounded-md md:hidden" // Only visible on mobile
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? (
+                <XMarkIcon className="h-7 w-7 text-gray-800 dark:text-gray-200" />
+            ) : (
+                <Bars3Icon className="h-7 w-7 text-gray-800 dark:text-gray-200" />
+            )}
+          </button>
         </div>
       </div>
 
       {/* --- FIX 2: The collapsible content wrapper --- */}
-      {/* This is the key change. */}
       <div className={`
-          flex-col justify-between flex-grow
-          ${isMenuOpen ? 'flex' : 'hidden'}  /* On mobile: display: flex IF open, otherwise display: none */
-          md:flex                          /* On desktop: ALWAYS display: flex, overriding the 'hidden' state */
-        `}>
-        <nav className="space-y-1 mt-4"> {/* Added mt-4 here for spacing */}
+          ${isMenuOpen ? 'block' : 'hidden'}      /* On mobile: Toggles visibility */
+          md:flex                                 /* On desktop: Always visible as a flex container */
+          
+          flex-col justify-between flex-grow      /* General flex properties */
+          
+          absolute w-full left-0 bg-white dark:bg-gray-800 shadow-lg  /* Mobile: Positions it as a dropdown */
+          md:static md:shadow-none md:bg-transparent md:p-0           /* Desktop: Resets it to a normal static block */
+        `}
+      >
+        <nav className="space-y-1 p-4 md:p-0 md:mt-4">
           <Link href="/dashboard" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md">
             <UserCircleIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" /> 
             <span className="font-medium">Overview</span>
@@ -78,7 +83,7 @@ export default function DashboardSidebar({ userProfile, session }) {
           </Link>
         </nav>
 
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"> {/* Added mt-4 */}
+        <div className="p-4 md:p-0 md:pt-6 md:border-t border-gray-200 dark:border-gray-700">
           <form action={handleLogout}>
             <button type="submit" className="group flex items-center space-x-3 w-full px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md">
               <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" /> 
