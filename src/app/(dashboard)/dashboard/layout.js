@@ -23,13 +23,11 @@ export default async function DashboardLayout({ children }) {
   }
   
   return (
-    // --- THIS IS THE KEY LAYOUT FIX ---
-    // On mobile (default), it's a flex column.
-    // On desktop (md:), it becomes a flex row.
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-100 dark:bg-gray-900">
       
-      {/* This component will now act as a header on mobile and a sidebar on desktop */}
-      <DashboardSidebar userProfile={userProfile} session={session} />
+      <div className="md:relative md:w-64 md:flex-shrink-0">
+        <DashboardSidebar userProfile={userProfile} session={session} />
+      </div>
       
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
         {children}
