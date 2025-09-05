@@ -22,22 +22,21 @@ export default function DashboardSidebar({ userProfile, session }) {
   const paymentsLinkUrl = isStripeOnboarded ? '/dashboard/payments' : '/connect-stripe';
 
   return (
-    // --- FIX 1: The main container ---
-    // It's a header on mobile (relative positioning for the dropdown)
-    // It becomes a full-height sidebar on desktop (md:)
-    <aside className="bg-white dark:bg-gray-800 shadow-md relative z-10 
-                     md:w-64 md:flex md:flex-col md:h-screen">
+    // On mobile, this container is a simple header. On desktop, it becomes the full sidebar.
+    <aside className="w-full bg-white dark:bg-gray-800 shadow-lg md:w-64 md:flex md:flex-col md:h-screen md:p-4">
       
-      {/* This part contains the always-visible header content */}
+      {/* HEADER: Always visible on all screen sizes */}
       <div className="flex justify-between items-center p-4">
         <Link href="/dashboard" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
           TributeToro
         </Link>
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
+          
+          {/* Hamburger/Close Button: Only visible on mobile */}
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)} 
-            className="p-1 rounded-md md:hidden" // Only visible on mobile
+            className="p-1 rounded-md md:hidden" // md:hidden is crucial
             aria-label="Toggle menu"
           >
             {isMenuOpen ? (
@@ -49,18 +48,15 @@ export default function DashboardSidebar({ userProfile, session }) {
         </div>
       </div>
 
-      {/* --- FIX 2: The collapsible content wrapper --- */}
+      {/* --- THIS IS THE CORRECTED COLLAPSIBLE SECTION --- */}
+      {/* It's a normal block in the flow, not absolutely positioned. */}
       <div className={`
-          ${isMenuOpen ? 'block' : 'hidden'}      /* On mobile: Toggles visibility */
-          md:flex                                 /* On desktop: Always visible as a flex container */
-          
-          flex-col justify-between flex-grow      /* General flex properties */
-          
-          absolute w-full left-0 bg-white dark:bg-gray-800 shadow-lg  /* Mobile: Positions it as a dropdown */
-          md:static md:shadow-none md:bg-transparent md:p-0           /* Desktop: Resets it to a normal static block */
+          flex-col justify-between flex-grow
+          ${isMenuOpen ? 'flex' : 'hidden'}  /* On mobile: display:flex if open, display:none if closed */
+          md:flex                           /* On desktop: ALWAYS display:flex, overriding the mobile 'hidden' state */
         `}
       >
-        <nav className="space-y-1 p-4 md:p-0 md:mt-4">
+        <nav className="space-y-1 p-4 pt-0 md:p-0 md:mt-4">
           <Link href="/dashboard" className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md">
             <UserCircleIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" /> 
             <span className="font-medium">Overview</span>
@@ -83,7 +79,7 @@ export default function DashboardSidebar({ userProfile, session }) {
           </Link>
         </nav>
 
-        <div className="p-4 md:p-0 md:pt-6 md:border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 pt-0 md:p-0 md:pt-6 md:border-t border-gray-200 dark:border-gray-700">
           <form action={handleLogout}>
             <button type="submit" className="group flex items-center space-x-3 w-full px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md">
               <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" /> 
