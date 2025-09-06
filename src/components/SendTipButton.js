@@ -23,7 +23,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
   
   // Updated constants
   const MINIMUM_TIP_AMOUNT = 1;
-  const MAXIMUM_TIP_AMOUNT = 2000;
+  const MAXIMUM_TIP_AMOUNT = 2500;
   
   const [amount, setAmount] = useState(MINIMUM_TIP_AMOUNT.toString());
   const [donorName, setDonorName] = useState('');
