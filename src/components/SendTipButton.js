@@ -1,4 +1,3 @@
-// frontend/src/components/SendTipButton.js
 'use client';
 
 import { useState } from 'react';
@@ -20,23 +19,23 @@ const getCurrencySymbol = (currencyCode = 'usd') => {
     return symbols[currencyCode.toLowerCase()] || '$';
 };
 
-export default function SendTipButton({ recipientUsername, recipientDisplayName, payoutsInUsd, stripeDefaultCurrency }) { // <-- ADD PROP
+export default function SendTipButton({ recipientUsername, recipientDisplayName, payoutsInUsd, stripeDefaultCurrency }) {
   
-  const MINIMUM_TIP_AMOUNT = 5;
-  const MAXIMUM_TIP_AMOUNT = 1111;
+  // Updated constants
+  const MINIMUM_TIP_AMOUNT = 1;
+  const MAXIMUM_TIP_AMOUNT = 2000;
+  
   const [amount, setAmount] = useState(MINIMUM_TIP_AMOUNT.toString());
   const [donorName, setDonorName] = useState('');
   const [error, setError] = useState(null);
   const [isPending, startTransition] = useTransition();
 
-  // --- FIX: Logic to determine the correct currency to display ---
   const displayCurrency = payoutsInUsd ? 'usd' : (stripeDefaultCurrency || 'usd');
   const currencySymbol = getCurrencySymbol(displayCurrency);
 
   const platformFeePercentage = 0.15;
   const platformFeeFixed = 1.00;
 
-  // Calculation for the simple "add-on" fee model for display (no changes needed)
   const calculateTotalDonorPays = (creatorAmount) => {
     if (isNaN(creatorAmount) || creatorAmount <= 0) return { total: 0, fee: 0 };
     const fee = (creatorAmount * platformFeePercentage) + platformFeeFixed;
@@ -44,13 +43,16 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
     return { total, fee };
   };
 
-  const creatorAmountNum = parseFloat(amount);
-  const { total: totalDonorPaysNum, fee: platformFeeNum } = calculateTotalDonorPays(creatorAmountNum);
+  // This is used for the real-time display in the JSX
+  const creatorAmountNumForDisplay = parseFloat(amount);
+  const { total: totalDonorPaysNum, fee: platformFeeNum } = calculateTotalDonorPays(creatorAmountNumForDisplay);
 
   const handleTip = async (formData) => {
-    // --- FIX: The error message should use the dynamic currency symbol ---
+    // Re-parse the amount from state *at the time of submission* for validation
+    const creatorAmountNum = parseFloat(amount);
+
     if (isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT) {
-      setError(`Please enter a valid amount for the creator (min ${currencySymbol}${MINIMUM_TIP_AMOUNT.toFixed(2)} or equivalent).`);
+      setError(`Please enter a valid amount (min ${currencySymbol}${MINIMUM_TIP_AMOUNT.toFixed(2)}).`);
       return;
     }
     if (creatorAmountNum > MAXIMUM_TIP_AMOUNT) {
@@ -90,13 +92,13 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
       <input type="hidden" name="recipientUsername" value={recipientUsername} />
 
       <div className="flex items-center justify-center space-x-2 mb-4">
-        {/* This now correctly displays the dynamic currency symbol */}
         <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">{currencySymbol}</span>
         <input
           type="text"
           value={amount}
           onChange={(e) => {
             const val = e.target.value;
+            // The validation here correctly restricts input
             if (val === "" || (/^\d*\.?\d{0,2}$/.test(val) && parseFloat(val) <= MAXIMUM_TIP_AMOUNT)) {
                 setAmount(val);
             }
@@ -108,7 +110,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
         />
       </div>
       
-      {creatorAmountNum > 0 && (
+      {creatorAmountNumForDisplay > 0 && (
         <div className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4 py-3">
             <div className="flex justify-between items-center px-2">
                 <span>Platform & Stripe Fee:</span>
@@ -135,7 +137,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
 
       <button
         type="submit"
-        disabled={isPending || isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT || creatorAmountNum > MAXIMUM_TIP_AMOUNT}
+        disabled={isPending || isNaN(creatorAmountNumForDisplay) || creatorAmountNumForDisplay < MINIMUM_TIP_AMOUNT || creatorAmountNumForDisplay > MAXIMUM_TIP_AMOUNT}
         className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
       >
          {isPending ? 'Processing...' : `Pay ${currencySymbol}${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}
