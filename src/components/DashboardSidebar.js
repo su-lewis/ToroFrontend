@@ -103,11 +103,11 @@ export default function DashboardSidebar({ userProfile, session }) {
               <span className="font-medium">Support</span>
             </Link>
           </nav>
-
+  
           <div className="px-4 pb-4 md:px-3 text-center text-xs space-x-3 text-gray-500 dark:text-gray-400">
-            <a href="/documents/privacy-policy.pdf" target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy</a>
-            <a href="/documents/terms-of-service.pdf" target="_blank" rel="noopener noreferrer" className="hover:underline">Terms</a>
-            <a href="/documents/refund-policy.pdf" target="_blank" rel="noopener noreferrer" className="hover:underline">Refunds</a>
+            <Link href="/privacy-policy" className="hover:underline">Privacy</Link>
+            <Link href="/terms-of-service" className="hover:underline">Terms</Link>
+            <Link href="/refund-policy" className="hover:underline">Refunds</Link>
           </div>
 
           <div className="p-4 pt-0 md:p-0 md:pt-4 md:border-t border-gray-200 dark:border-gray-700">

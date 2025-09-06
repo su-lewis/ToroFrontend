@@ -8,7 +8,7 @@ const faqs = [
     },
     {
         question: "What are the fees?",
-        answer: "TributeToro charges a 15% + $1 platform fee on each transaction. Our payment processor, Stripe, also charges a standard processing fee (typically 2.9% + $0.30). These fees are automatically deducted from the total amount a supporter pays."
+        answer: "TributeToro has a transparent fee structure. We apply a platform fee of 15% + $1.00 (or the equivalent in your currency) to each transaction. This fee is added on top of the amount you choose to give a creator, so they always receive the full amount you intended. Our payment processor, Stripe, also includes their standard processing fee in the total."
     },
     {
         question: "What is your refund policy?",
