@@ -23,14 +23,13 @@ export default async function HomePage() {
     redirect('/dashboard');
   }
 
+  // Use <main> here as the root container for this specific page.
   return (
-    // This is the root div for the page content
-    <div className="flex flex-col min-h-full">
+    <main className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       
       {/* Section 1: Hero */}
-      {/* --- THIS IS THE FIX --- */}
-      {/* This section now uses flex-grow to fill available space, pushing the footer down */}
-      <section className="relative flex flex-grow flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
+      {/* This section is set to fill the screen height, acting as the initial view. */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
         <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
@@ -69,9 +68,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* These sections are now guaranteed to be below the hero */}
+      {/* These sections follow the hero section in the normal document flow. */}
       <FaqSection />
       <Footer />
-    </div>
+    </main>
   );
 }
