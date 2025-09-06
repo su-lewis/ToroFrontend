@@ -24,11 +24,13 @@ export default async function HomePage() {
   }
 
   return (
-    // Remove conflicting background from main div - let sections control their own backgrounds
-    <div className="min-h-screen">
+    // This is the root div for the page content
+    <div className="flex flex-col min-h-full">
       
-      {/* Section 1: Hero - Full viewport height */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
+      {/* Section 1: Hero */}
+      {/* --- THIS IS THE FIX --- */}
+      {/* This section now uses flex-grow to fill available space, pushing the footer down */}
+      <section className="relative flex flex-grow flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
         <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
@@ -67,18 +69,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Section 2: FAQ - Should be clearly visible */}
-      <section className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-        <FaqSection />
-      </section>
-
-      {/* Section 3: Footer - Should be at the bottom */}
+      {/* These sections are now guaranteed to be below the hero */}
+      <FaqSection />
       <Footer />
-      
-      {/* Debug: Add a temporary colored section to verify scrolling works */}
-      <div className="h-32 bg-red-500 text-white flex items-center justify-center text-xl font-bold">
-        DEBUG: If you can see this red section, scrolling is working!
-      </div>
     </div>
   );
 }

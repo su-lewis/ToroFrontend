@@ -14,12 +14,16 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className}`}>
+    <html lang="en" suppressHydrationWarning className="h-full bg-gray-100 dark:bg-gray-900">
+      {/* --- THIS IS THE FIX (Part 1) --- */}
+      {/* The body is now a flex container that fills the full height */}
+      <body className={`${inter.className} h-full flex flex-col`}>
         <AppThemeProvider>
-          {/* --- YOUR FIX: The <main> wrapper is gone. --- */}
-          {/* This is the cleanest and most flexible structure. */}
-          {children}
+          {/* --- THIS IS THE FIX (Part 2) --- */}
+          {/* This main wrapper will grow to contain all content, enabling scroll */}
+          <main className="flex-grow">
+            {children}
+          </main>
         </AppThemeProvider>
       </body>
     </html>
