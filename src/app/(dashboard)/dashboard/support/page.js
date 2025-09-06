@@ -29,31 +29,39 @@ const faqs = [
 ];
 
 export default function SupportPage() {
-    return (
-        <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-100">
-                Support & FAQ
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Find answers to common questions below.
-            </p>
+      return (
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-100">
+        Support & FAQ
+      </h1>
+      <p className="text-gray-500 dark:text-gray-400 mb-4">
+        Find answers to common questions below.
+      </p>
+      
+      <p className="mb-8 text-gray-600 dark:text-gray-300">
+        For further assistance, you can reach us at{' '}
+        <a 
+          href="mailto:contact.tributetoro@gmail.com" 
+          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          contact.tributetoro@gmail.com
+        </a>
+        {' '}or on{' '}
+        <a 
+          href="https://x.com/tributetoro" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          x.com/tributetoro
+        </a>.
+      </p>
 
-            {/* --- THIS IS THE NEW LINE --- */}
-            <p className="mb-8 text-gray-600 dark:text-gray-300">
-                For further assistance, you can reach us at:{' '}
-                <a
-                    href="mailto:contact.tributetoro@gmail.com"
-                    className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                    contact.tributetoro@gmail.com
-                </a>
-            </p>
-
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                {faqs.map((faq, index) => (
-                    <FaqItem key={index} question={faq.question} answer={faq.answer} />
-                ))}
-            </div>
-        </div>
-    );
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+        {faqs.map((faq, index) => (
+          <FaqItem key={index} question={faq.question} answer={faq.answer} />
+        ))}
+      </div>
+    </div>
+  );
 }
