@@ -26,8 +26,7 @@ export default async function HomePage() {
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
       
-      {/* --- THIS IS THE FIX --- */}
-      {/* The `overflow-hidden` class has been removed from this line. */}
+      {/* Ensure `overflow-hidden` is NOT present here */}
       <div className="relative min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
         <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
@@ -67,7 +66,6 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* These sections will now be visible when scrolling */}
       <FaqSection />
       <Footer />
     </div>

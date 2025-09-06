@@ -6,7 +6,7 @@ export default function RefundPolicyPage() {
   return (
     <div className="bg-gray-900 min-h-screen">
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="prose prose-invert mx-auto">
+        <div className="prose prose-invert mx-auto select-none">
           <h1>TributeToro Refund Policy</h1>
           <p className="lead">VERSION 1.1 | LAST REVISED ON: [AUGUST 25, 2024]</p>
 
