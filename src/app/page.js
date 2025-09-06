@@ -23,11 +23,15 @@ export default async function HomePage() {
     redirect('/dashboard');
   }
 
+  // Use a <main> tag for the primary content of the page
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
+    <main className="bg-gray-50 dark:bg-gray-900">
       
-      {/* Ensure `overflow-hidden` is NOT present here */}
-      <div className="relative min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
+      {/* Section 1: Hero */}
+      {/* --- THIS IS THE KEY CHANGE --- */}
+      {/* We REMOVE min-h-screen and use padding to create the large hero feel. */}
+      {/* This section now takes up only as much space as it needs, allowing the page to scroll. */}
+      <section id="hero" className="relative flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800 pt-32 pb-20">
         <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
@@ -57,6 +61,7 @@ export default async function HomePage() {
           </div>
         </div>
         
+        {/* The scroll-down hint is now more useful than ever */}
         <div className="absolute bottom-10">
           <a href="#faq" aria-label="Scroll to FAQ" className="animate-bounce">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,10 +69,13 @@ export default async function HomePage() {
             </svg>
           </a>
         </div>
-      </div>
+      </section>
 
+      {/* Section 2: FAQ Section - This will now be visible on scroll */}
       <FaqSection />
+
+      {/* Section 3: Footer - This will now be visible at the end of the page */}
       <Footer />
-    </div>
+    </main>
   );
 }
