@@ -16,7 +16,7 @@ import {
     ArrowDownCircleIcon,
     ArrowUpCircleIcon,
     ExclamationCircleIcon,
-} from '@heroicons/react/24/outline'; // Using outline for consistency
+} from '@heroicons/react/24/outline';
 import { Switch } from '@headlessui/react';
 
 const formatCurrency = (cents, currency = 'USD') => {
@@ -58,7 +58,7 @@ export default function PaymentsPage() {
                 
                 const [statsResult, historyResult, balanceResult] = await Promise.all([
                     getPaymentStats(timeframe, userCurrency),
-                    getUnifiedHistory(), // Use the new unified history action
+                    getUnifiedHistory(),
                     getStripeBalance()
                 ]);
 
@@ -109,7 +109,6 @@ export default function PaymentsPage() {
         });
     };
 
-    // Helper function to dynamically style each transaction item
     const getTransactionRowDetails = (item) => {
         if (item.type === 'PAYMENT') {
             switch(item.status) {
@@ -129,6 +128,9 @@ export default function PaymentsPage() {
 
     const availableBalance = balance?.available?.[0];
     const periodStats = stats?.period;
+    
+    // Check if the user's native currency is USD.
+    const isUsdNative = user?.stripeDefaultCurrency === 'usd';
 
     if (isLoadingInitial) return <div className="text-center p-10 text-gray-500 dark:text-gray-400">Loading payment analytics...</div>;
 
@@ -160,21 +162,32 @@ export default function PaymentsPage() {
                             <div>
                                 <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Use USD for Payments</h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {user?.payoutsInUsd ? 'Mode: USD' : 'Mode: Native Currency'}
+                                    {isUsdNative || user?.payoutsInUsd ? 'Mode: USD' : 'Mode: Native Currency'}
                                 </p>
                             </div>
                             <Switch
-                                checked={user?.payoutsInUsd ?? true}
+                                checked={isUsdNative || (user?.payoutsInUsd ?? true)}
                                 onChange={(enabled) => handleAction(updateUserPayoutsInUsd, enabled)}
-                                disabled={isActionLoading || !user?.stripeDefaultCurrency}
-                                className={`${user?.payoutsInUsd ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                                disabled={isActionLoading || isUsdNative}
+                                className={`${isUsdNative || user?.payoutsInUsd ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-70 disabled:cursor-not-allowed`}
                             >
-                                <span className={`${user?.payoutsInUsd ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                                <span className={`${isUsdNative || user?.payoutsInUsd ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
                             </Switch>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                            {user?.payoutsInUsd ? (<p className="text-xs text-gray-500 dark:text-gray-400">When enabled, donors will see and pay in US Dollars ($).</p>) 
-                            : (<p className="text-xs text-gray-500 dark:text-gray-400">When disabled, donors will see and pay in your native currency ({user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).</p>)}
+                            {isUsdNative ? (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Your payout currency is USD, so payments will always be processed in USD. This setting is locked.
+                                </p>
+                            ) : user?.payoutsInUsd ? (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    When enabled, donors will see and pay in US Dollars ($). Recommended for a global audience.
+                                </p>
+                            ) : (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    When disabled, donors will pay in your native currency ({user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
@@ -246,7 +259,6 @@ export default function PaymentsPage() {
                 </div>
             </div>
             
-            {/* --- NEW, UNIFIED TRANSACTION HISTORY SECTION --- */}
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Transaction History</h2>
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
