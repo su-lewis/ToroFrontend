@@ -1,35 +1,74 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { fetchProtectedDataFromServer } from '@/lib/server-api';
-import { UserCircleIcon, LinkIcon as LinkIconOutline, Cog6ToothIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { getUserSettings } from '@/app/actions';
+import { 
+    UserCircleIcon, 
+    LinkIcon as LinkIconOutline, 
+    Cog6ToothIcon, 
+    ChartBarIcon, 
+    ShareIcon, 
+    CheckIcon 
+} from '@heroicons/react/24/outline';
 
-async function getAppUserProfileDataForOverview() {
-  try {
-    const profileData = await fetchProtectedDataFromServer('/users/me');
-    return { userProfile: profileData, error: null };
-  } catch (error) {
-    return { userProfile: null, error };
+export default function DashboardOverviewPage() {
+  const [userProfile, setUserProfile] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    async function getAppUserProfileDataForOverview() {
+      // Use the server action to fetch data on the client
+      const result = await getUserSettings();
+      
+      if (result.success) {
+        setUserProfile(result.data);
+      } else {
+        // Handle cases where the profile might not be found (404) vs. a real server error
+        if (result.status !== 404 && result.status !== 401) {
+          setError(result.message || "Error loading dashboard data.");
+        }
+      }
+      setIsLoading(false);
+    }
+    getAppUserProfileDataForOverview();
+  }, []);
+
+  const handleCopyLink = () => {
+    if (!userProfile?.username) return;
+    // Construct the full URL using the browser's window object
+    const url = `${window.location.origin}/${userProfile.username}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    // Reset the "Copied" state after 2 seconds for better user feedback
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (isLoading) {
+    return <div className="text-center p-10 text-gray-500 dark:text-gray-400">Loading dashboard...</div>;
   }
-}
 
-export default async function DashboardOverviewPage() {
-  const { userProfile, error } = await getAppUserProfileDataForOverview();
-  const isStripeOnboarded = userProfile?.stripeOnboardingComplete === true;
-  const paymentsLinkUrl = isStripeOnboarded ? '/dashboard/payments' : '/connect-stripe';
-  if (error && error.status !== 404 && error.status !== 401) { 
+  if (error) { 
     return (
       <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center">
         <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Error Loading Dashboard</h1>
-        <p className="text-gray-700 dark:text-gray-300 mb-4">Details: {error.bodyText || error.message || "Please try again."}</p>
+        <p className="text-gray-700 dark:text-gray-300 mb-4">Details: {error}</p>
       </div>
     );
   }
+
+  const isStripeOnboarded = userProfile?.stripeOnboardingComplete === true;
+  const paymentsLinkUrl = isStripeOnboarded ? '/dashboard/payments' : '/connect-stripe';
   const greetingName = userProfile?.displayName || userProfile?.username || 'User';
-  const isProfileIncomplete = !userProfile || error?.status === 404 || (userProfile && !userProfile.username);
+  const isProfileIncomplete = !userProfile || (userProfile && !userProfile.username);
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-lg">
       <h1 className="text-3xl md:text-4xl font-bold mb-3 text-gray-800 dark:text-gray-100">Welcome, {greetingName}!</h1>
       <p className="text-md md:text-lg text-gray-600 dark:text-gray-400 mb-10">Manage your public presence and payment settings.</p>
+      
       {isProfileIncomplete && (
         <div className="p-4 md:p-5 mb-8 bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 text-yellow-800 dark:text-yellow-300 rounded-md shadow">
           <h2 className="font-bold text-lg mb-2">Complete Your Profile</h2>
@@ -37,6 +76,7 @@ export default async function DashboardOverviewPage() {
           <Link href="/dashboard/profile" className="inline-block bg-yellow-400 hover:bg-yellow-500 text-yellow-800 font-semibold py-2 px-4 rounded-md transition-colors text-sm">Go to Profile Setup</Link>
         </div>
       )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="group p-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl shadow-md hover:shadow-lg transition-shadow">
           <UserCircleIcon className="h-10 w-10 text-blue-500 dark:text-blue-400 mb-3" />
@@ -44,7 +84,16 @@ export default async function DashboardOverviewPage() {
           {userProfile?.username ? (
             <>
               <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm md:text-base">View and share your page.</p>
-              <Link href={`/${userProfile.username}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-5 rounded-lg text-sm">View Page</Link>
+              <div className="flex items-center space-x-2">
+                <Link href={`/${userProfile.username}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-5 rounded-lg text-sm">View Page</Link>
+                <button 
+                  onClick={handleCopyLink} 
+                  className="p-2.5 bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                  aria-label="Copy profile link"
+                >
+                  {copied ? <CheckIcon className="h-5 w-5 text-green-500" /> : <ShareIcon className="h-5 w-5 text-gray-700 dark:text-gray-200" />}
+                </button>
+              </div>
             </>
           ) : (<p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">Set username in profile to activate.</p>)}
         </div>
