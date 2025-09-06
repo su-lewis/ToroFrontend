@@ -10,8 +10,8 @@ export default function TermsOfServicePage() {
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="prose prose-invert mx-auto">
           <h1>Website Terms of Use</h1>
-          <p className="lead">VERSION 1.6 | LAST REVISED ON: [Date, e.g., JUNE 01, 2024]</p>
-          
+          <p className="lead">VERSION 1.6 | LAST REVISED ON: [AUGUST 25, 2024]</p>
+
           <p>The website located at www.tributetoro.com (the “Site”) is a copyrighted work belonging to TributeToro (“Company”, “us”, “our”, “we”, and “TributeToro”). Certain features of the Site may be subject to additional guidelines, terms, or rules, which will be posted on the Site in connection with such features. All such additional terms, guidelines, and rules are incorporated by reference into these Terms. In the context of these Terms, terms such as "gift", "gifts", and "support" are used to describe various forms of contributions to support content creators.</p>
 
           <p><strong>BY USING OUR SITE, YOU ARE AGREEING TO THESE TERMS OF SERVICE (“TERMS”). YOU CONFIRM THAT YOU HAVE THE LEGAL AUTHORITY TO AGREE TO THESE TERMS, EITHER FOR YOURSELF OR ON BEHALF OF ANY ENTITY YOU REPRESENT. YOU MUST BE AT LEAST 18 YEARS OLD TO USE OUR SITE. IF YOU DISAGREE WITH ANY PART OF THESE TERMS, PLEASE DO NOT ACCESS OR USE THE SITE.</strong></p>

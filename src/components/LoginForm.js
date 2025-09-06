@@ -1,4 +1,3 @@
-// frontend/src/components/LoginForm.js
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -28,9 +27,8 @@ export default function LoginForm() {
         password,
       });
       if (signInError) throw signInError;
-      // On success, redirect to the dashboard. The layout will handle the rest.
       router.push('/dashboard');
-      router.refresh(); // Important to re-fetch server components
+      router.refresh(); 
     } catch (err) {
       setError(err.message || "Failed to log in. Please check your credentials.");
       setLoading(false);
@@ -58,8 +56,21 @@ export default function LoginForm() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-gray-100 dark:bg-gray-900">
+      
+      {/* --- THIS IS THE NEW LOGO SECTION --- */}
+      <div className="mb-10 text-center">
+        <h1 className="text-5xl md:text-6xl font-extrabold">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+            Tribute
+          </span>
+          <span className="dark:text-white text-gray-800">
+            Toro
+          </span>
+        </h1>
+      </div>
+
       <div className="p-8 bg-white dark:bg-gray-800 shadow-xl rounded-lg w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">Log In to Your Account</h1>
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">Log In to Your Account</h2>
         
         {error && <p className="text-red-500 dark:text-red-400 mb-4 p-3 bg-red-100 dark:bg-red-900/30 rounded text-sm text-center">{error}</p>}
         {success && <p className="text-green-600 dark:text-green-400 mb-4 p-3 bg-green-100 dark:bg-green-900/30 rounded text-sm text-center">{success}</p>}

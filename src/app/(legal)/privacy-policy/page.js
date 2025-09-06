@@ -8,7 +8,7 @@ export default function PrivacyPolicyPage() {
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="prose prose-invert mx-auto">
           <h1>TributeToro Privacy Policy</h1>
-          <p className="lead">VERSION 2.1 | LAST REVISED ON: [Date, e.g., JUNE 01, 2024]</p>
+          <p className="lead">VERSION 2.1 | LAST REVISED ON: [AUGUST 25, 2024]</p>
           
           <p>TributeToro (“we,” “us,” or “our”) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our website, www.tributetoro.com (the “Site”), and our services (the “Service”).</p>
 

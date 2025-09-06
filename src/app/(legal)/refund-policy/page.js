@@ -8,7 +8,7 @@ export default function RefundPolicyPage() {
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="prose prose-invert mx-auto">
           <h1>TributeToro Refund Policy</h1>
-          <p className="lead">VERSION 1.1 | LAST REVISED ON: [Date, e.g., JUNE 01, 2024]</p>
+          <p className="lead">VERSION 1.1 | LAST REVISED ON: [AUGUST 25, 2024]</p>
 
           <h2>1. Our Philosophy on Support</h2>
           <p>At TributeToro, we are committed to fostering a community where financial contributions are recognized as direct and voluntary acts of support for creators. This Refund Policy is designed to be clear and fair, protecting both the supporter and the creator. By making a payment on TributeToro, you acknowledge and agree to the terms of this policy.</p>
