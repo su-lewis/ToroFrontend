@@ -1,22 +1,20 @@
-// This component renders your Privacy Policy.
-// The `prose` classes from Tailwind CSS will automatically style the headings, paragraphs, and lists.
-
 export const metadata = {
   title: 'Privacy Policy',
 };
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="bg-white dark:bg-gray-900 min-h-screen">
+    <div className="bg-gray-900 min-h-screen">
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="prose prose-lg dark:prose-invert mx-auto">
+        <div className="prose prose-invert mx-auto">
           <h1>TributeToro Privacy Policy</h1>
-          <p className="lead">VERSION 2.1 | LAST REVISED ON: [Date, AUGUST 01, 2025]</p>
-
+          <p className="lead">VERSION 2.1 | LAST REVISED ON: [Date, e.g., JUNE 01, 2024]</p>
+          
           <p>TributeToro (“we,” “us,” or “our”) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our website, www.tributetoro.com (the “Site”), and our services (the “Service”).</p>
 
           <p>By using our Site and Service, you accept our Privacy Policy and Terms of Use, and you consent to our collection, storage, and use of your Personal Information as described below.</p>
 
+          <div className="py-4" />
           <h2>I. INFORMATION WE COLLECT</h2>
           <p>We collect “Non-Personal Information” (data that cannot be used to personally identify you, like anonymous usage data, browser type, and referring URLs) and “Personal Information” (data that can identify you, such as your email address).</p>
           
@@ -29,6 +27,7 @@ export default function PrivacyPolicyPage() {
           <h3>Children’s Privacy</h3>
           <p>Our Service is not directed to anyone under the age of 18. We do not knowingly collect Personal Information from anyone under 18. If you believe we have inadvertently done so, please contact us immediately so we can delete the information.</p>
           
+          <div className="py-4" />
           <h2>II. HOW WE USE AND SHARE INFORMATION</h2>
           <h3>Personal Information:</h3>
           <p>We do not sell, trade, rent, or otherwise share your Personal Information for marketing purposes. We use your Personal Information to:</p>
@@ -44,12 +43,15 @@ export default function PrivacyPolicyPage() {
           <p>We use Non-Personal Information to improve the Service and analyze usage trends. We reserve the right to use and disclose this anonymized data at our discretion.</p>
           <p>In the event of a business transaction like a merger or acquisition, your Personal Information may be transferred as part of our assets.</p>
 
+          <div className="py-4" />
           <h2>III. HOW WE PROTECT INFORMATION</h2>
           <p>We implement reasonable security measures designed to protect your information from unauthorized access. Your account is protected by a password, and we urge you to keep it confidential and log out after each session. However, no security measures are perfect or impenetrable. By using our Service, you acknowledge that you understand and agree to assume these inherent risks.</p>
 
+          <div className="py-4" />
           <h2>IV. YOUR CHOICES REGARDING YOUR INFORMATION</h2>
           <p>You have the right to opt out of receiving promotional marketing emails from us at any time by following the unsubscribe instructions provided in those emails. Please note that you cannot opt out of essential administrative communications, such as updates to our Privacy Policy or Terms of Service.</p>
 
+          <div className="py-4" />
           <h2>V. YOUR DATA PROTECTION RIGHTS (GDPR & UK GDPR)</h2>
           <p>Depending on your location, you may have the following rights regarding your Personal Information:</p>
           <ul>
@@ -61,12 +63,15 @@ export default function PrivacyPolicyPage() {
           </ul>
           <p>To exercise any of these rights, please contact us at the email address below.</p>
 
+          <div className="py-4" />
           <h2>VI. LINKS TO OTHER WEBSITES</h2>
           <p>Our Service allows users to post links to third-party websites. We are not responsible for the privacy practices of those other sites. This Privacy Policy applies only to information collected by TributeToro.</p>
-
+          
+          <div className="py-4" />
           <h2>VII. CHANGES TO OUR PRIVACY POLICY</h2>
           <p>We reserve the right to change this policy at any time. We will notify you of significant changes via email or by placing a prominent notice on our Site.</p>
-
+          
+          <div className="py-4" />
           <h2>VIII. CONTACT US</h2>
           <p>If you have any questions about this Privacy Policy or our privacy practices, please contact us by sending an email to contact.tributetoro@gmail.com.</p>
         </div>
