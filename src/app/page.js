@@ -23,12 +23,12 @@ export default async function HomePage() {
     redirect('/dashboard');
   }
 
-  // Use <main> here as the root container for this specific page.
+  // We add a <main> tag here, as it's the root content for THIS specific page.
   return (
     <main className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       
       {/* Section 1: Hero */}
-      {/* This section is set to fill the screen height, acting as the initial view. */}
+      {/* This section now correctly uses min-h-screen to fill the viewport */}
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
         <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
@@ -68,7 +68,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* These sections follow the hero section in the normal document flow. */}
+      {/* These sections will now be rendered after the full-screen hero and will be scrollable */}
       <FaqSection />
       <Footer />
     </main>

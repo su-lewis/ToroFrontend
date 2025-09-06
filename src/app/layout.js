@@ -18,8 +18,8 @@ export default function RootLayout({ children }) {
       <body className={`${inter.className}`}>
         <AppThemeProvider>
           {/* --- THE FIX --- */}
-          {/* REMOVE the <main> wrapper. Each page will define its own main wrapper. */}
-          {/* This gives pages full control over their own layout. */}
+          {/* We REMOVE the <main> wrapper entirely from the layout. */}
+          {/* Each page will now be responsible for its own root layout element. */}
           {children}
         </AppThemeProvider>
       </body>
