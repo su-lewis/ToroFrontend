@@ -1,44 +1,26 @@
-// frontend/src/app/layout.js
 import './globals.css';
-import { Inter } from 'next/font/google'; // Or your chosen font
-import { AppThemeProvider } from '@/components/ThemeProvider'; // Import the new provider
+import { Inter } from 'next/font/google';
+import { AppThemeProvider } from '@/components/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
-// --- METADATA OBJECT ---
-// This object configures the default metadata for your entire application.
 export const metadata = {
   title: {
-    default: 'TributeToro', // The default title for most pages
-    template: '%s | TributeToro', // A template for child pages to use
-                                     // e.g., "samiam's Profile | TributeToro"
+    default: 'TributeToro',
+    template: '%s | TributeToro',
   },
-  description: 'Create your own link-in-bio page, share your content, and receive support from your audience.',
-  // You can add more metadata here for SEO, like openGraph, twitter, etc.
-  // openGraph: {
-  //   title: 'Your Site Name',
-  //   description: 'Your awesome site description.',
-  //   url: 'https://your-live-domain.com',
-  //   siteName: 'Your Site Name',
-  //   images: [
-  //     {
-  //       url: 'https://your-live-domain.com/og-image.png', // A URL to a default sharing image.
-  //       width: 1200,
-  //       height: 630,
-  //     },
-  //   ],
-  //   locale: 'en_US',
-  //   type: 'website',
-  // },
+  description: 'Create your own page, share your content, and receive support from your fans.',
 };
-// --- END OF METADATA ---
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning> {/* Add suppressHydrationWarning */}
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className}`}>
         <AppThemeProvider>
-          {/* Main content is now a child of the theme provider */}
-          <main className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+          {/* --- THIS IS THE FIX --- */}
+          {/* The `min-h-screen` class has been removed from this line. */}
+          {/* This allows the main content area to grow as tall as needed. */}
+          <main className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
             {children}
           </main>
         </AppThemeProvider>
