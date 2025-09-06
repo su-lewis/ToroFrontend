@@ -5,55 +5,40 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import apiClient from '@/lib/api';
 import { createStripeOnboardLink } from '@/app/actions';
+// --- THIS IS THE FIX (Part 1) ---
+// Import the static list of countries directly
+import { supportedCountries } from '@/lib/stripe-countries';
 
 function ConnectStripeContent() {
-    const [loading, setLoading] = useState(true);
+    // We no longer need a 'loading' state for the country list
+    const [statusLoading, setStatusLoading] = useState(true);
     const [error, setError] = useState(null);
     const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
     const [isActionPending, startTransition] = useTransition();
-    const [selectedCountry, setSelectedCountry] = useState('US'); // Default to United States
-    const [countries, setCountries] = useState([]);
-
+    const [selectedCountry, setSelectedCountry] = useState('US');
+    
     const searchParams = useSearchParams();
 
     useEffect(() => {
-        const loadInitialData = async () => {
+        // --- THIS IS THE FIX (Part 2) ---
+        // This effect is now ONLY for fetching the account status.
+        const fetchAccountStatus = async () => {
+            setStatusLoading(true);
             setError(null);
-            
-            // --- THIS IS THE FIX ---
-            // We separate the API calls to make debugging easier and handle errors gracefully.
-            
-            // Fetch Countries First
             try {
-                const countriesResponse = await apiClient.get('/public/stripe-supported-countries');
-                if (countriesResponse.data) {
-                    setCountries(countriesResponse.data);
-                } else {
-                    // This is a real error - the endpoint returned no data
-                    throw new Error("Country list is empty.");
-                }
-            } catch (err) {
-                console.error("Failed to fetch country list:", err);
-                setError("Could not load the list of supported countries. Please refresh the page.");
-                setCountries([]); // Ensure countries list is empty on error
-            }
-
-            // Fetch Account Status
-            try {
-                const statusResponse = await apiClient.get('/stripe/connect/account-status');
-                setStripeAccountStatus(statusResponse.data);
+                const response = await apiClient.get('/stripe/connect/account-status');
+                setStripeAccountStatus(response.data);
             } catch (err) {
                 if (err.response?.status === 403) {
                     setError("You must complete your profile before setting up payments.");
                 } else if (err.response?.status !== 404) {
-                    setError(prevError => prevError || err.response?.data?.message || "Could not retrieve Stripe account status.");
+                    setError(err.response?.data?.message || "Could not retrieve Stripe account status.");
                 }
             } finally {
-                setLoading(false);
+                setStatusLoading(false);
             }
         };
-
-        loadInitialData();
+        fetchAccountStatus();
         if (searchParams.get('reauth')) {
             setError("Your previous Stripe session expired. Please try connecting again.");
         }
@@ -71,7 +56,7 @@ function ConnectStripeContent() {
         });
     };
 
-    if (loading) {
+    if (statusLoading) {
         return <p className="text-center p-10 text-lg text-gray-600 dark:text-gray-400">Loading your payment settings...</p>;
     }
     
@@ -97,18 +82,15 @@ function ConnectStripeContent() {
                         name="country"
                         value={selectedCountry}
                         onChange={(e) => setSelectedCountry(e.target.value)}
-                        disabled={countries.length === 0}
-                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black dark:text-white bg-white dark:bg-gray-700 disabled:bg-gray-200"
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black dark:text-white bg-white dark:bg-gray-700"
                     >
-                        {countries.length > 0 ? (
-                            countries.map(country => (
-                                <option key={country.code} value={country.code}>
-                                    {country.name}
-                                </option>
-                            ))
-                        ) : (
-                            <option disabled>Loading countries...</option>
-                        )}
+                        {/* --- THIS IS THE FIX (Part 3) --- */}
+                        {/* Map over the imported static list */}
+                        {supportedCountries.map(country => (
+                            <option key={country.code} value={country.code}>
+                                {country.name}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
@@ -116,7 +98,7 @@ function ConnectStripeContent() {
                 
                 <button
                     type="submit"
-                    disabled={isActionPending || countries.length === 0}
+                    disabled={isActionPending}
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors disabled:opacity-70"
                 >
                     {isActionPending ? 'Redirecting...' : 'Securely Connect with Stripe'}
