@@ -104,7 +104,13 @@ export default function DashboardSidebar({ userProfile, session }) {
             </Link>
           </nav>
 
-          <div className="p-4 pt-0 md:p-0 md:pt-6 md:border-t border-gray-200 dark:border-gray-700">
+          <div className="px-4 pb-4 md:px-3 text-center text-xs space-x-3 text-gray-500 dark:text-gray-400">
+            <a href="/documents/privacy-policy.pdf" target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy</a>
+            <a href="/documents/terms-of-service.pdf" target="_blank" rel="noopener noreferrer" className="hover:underline">Terms</a>
+            <a href="/documents/refund-policy.pdf" target="_blank" rel="noopener noreferrer" className="hover:underline">Refunds</a>
+          </div>
+
+          <div className="p-4 pt-0 md:p-0 md:pt-4 md:border-t border-gray-200 dark:border-gray-700">
             <form action={handleLogout}>
               <button type="submit" className="group flex items-center space-x-3 w-full px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md">
                 <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" /> 
