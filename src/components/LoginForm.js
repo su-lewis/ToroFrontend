@@ -10,9 +10,9 @@ export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null); // For password reset message
-  const [loading, setLoading] = useState(false); // For email/password login
-  const [isPending, startTransition] = useTransition(); // For password reset server action
+  const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const router = useRouter();
 
@@ -57,12 +57,14 @@ export default function LoginForm() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-gray-100 dark:bg-gray-900">
       
-      {/* --- THIS IS THE NEW LOGO SECTION --- */}
       <div className="mb-10 text-center">
         <h1 className="text-5xl md:text-6xl font-extrabold">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
             Tribute
           </span>
+          {/* --- THIS IS THE FIX --- */}
+          {/* Add an explicit space between the two spans */}
+          {' '}
           <span className="dark:text-white text-gray-800">
             Toro
           </span>

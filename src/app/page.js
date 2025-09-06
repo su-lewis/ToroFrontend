@@ -2,8 +2,8 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import FaqSection from '@/components/FaqSection'; // Import the new section
-import Footer from '@/components/Footer';       // Import the new footer
+import FaqSection from '@/components/FaqSection';
+import Footer from '@/components/Footer';
 
 export default async function HomePage() {
   const cookieStore = cookies();
@@ -19,24 +19,25 @@ export default async function HomePage() {
 
   const { data: { session } } = await supabase.auth.getSession();
 
-  // If a session exists, redirect to the dashboard. This behavior is unchanged.
   if (session) {
     redirect('/dashboard');
   }
 
-  // If no session, render the new scrolling landing page.
   return (
-    // The main wrapper for the entire scrolling page
     <div className="bg-gray-50 dark:bg-gray-900">
       
-      {/* Section 1: Hero (your original login/signup screen, modified for scrolling) */}
+      {/* --- THIS IS THE FIX --- */}
+      {/* The `overflow-hidden` class has been removed from this line. */}
       <div className="relative min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
         <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
               Tribute
             </span>
-            <span className="dark:text-white text-gray-800">Toro</span>
+            {' '}
+            <span className="dark:text-white text-gray-800">
+              Toro
+            </span>
           </h1>
           <p className="text-xl text-gray-700 dark:text-gray-300 mb-10">
             Create a personalized page to share all your important links and allow your audience to support you directly.
@@ -57,7 +58,6 @@ export default async function HomePage() {
           </div>
         </div>
         
-        {/* The old "Powered by Stripe" footer is replaced by a "scroll down" hint */}
         <div className="absolute bottom-10">
           <a href="#faq" aria-label="Scroll to FAQ" className="animate-bounce">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,10 +67,8 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Section 2: FAQ Section */}
+      {/* These sections will now be visible when scrolling */}
       <FaqSection />
-
-      {/* Section 3: Footer */}
       <Footer />
     </div>
   );
