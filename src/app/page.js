@@ -23,11 +23,11 @@ export default async function HomePage() {
     redirect('/dashboard');
   }
 
-  // The root element is a simple div, not a <main> tag.
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
+    // --- YOUR FIX: Added text color classes for proper inheritance ---
+    <div className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       
-      {/* Section 1: Hero. We use min-h-screen here to make THIS section fill the viewport. */}
+      {/* Section 1: Hero */}
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-800">
         <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
@@ -67,7 +67,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* These will now be part of the scrollable document */}
       <FaqSection />
       <Footer />
     </div>

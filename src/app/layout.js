@@ -17,12 +17,9 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className}`}>
         <AppThemeProvider>
-          {/* --- THE FIX --- */}
-          {/* We have REMOVED `min-h-screen` from this <main> tag. */}
-          {/* This allows the main content area to grow to the height of its children. */}
-          <main className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-            {children}
-          </main>
+          {/* --- YOUR FIX: The <main> wrapper is gone. --- */}
+          {/* This is the cleanest and most flexible structure. */}
+          {children}
         </AppThemeProvider>
       </body>
     </html>
