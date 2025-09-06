@@ -13,7 +13,8 @@ import {
     UserCircleIcon,
     KeyIcon,
     Bars3Icon,
-    XMarkIcon
+    XMarkIcon,
+    QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function DashboardSidebar({ userProfile, session }) {
@@ -95,14 +96,23 @@ export default function DashboardSidebar({ userProfile, session }) {
           </Link>
         </nav>
 
-        <div className="p-4 pt-0 md:p-0 md:pt-6 md:border-t border-gray-200 dark:border-gray-700">
-          <form action={handleLogout}>
-            <button type="submit" className="group flex items-center space-x-3 w-full px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md">
-              <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" /> 
-              <span className="font-medium">Log Out</span>
-            </button>
-          </form>
-          {session?.user?.email && ( <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 p-2 text-center break-all">{session.user.email}</p> )}
+        <div>
+          <nav className="px-4 pb-4 md:px-0 md:pb-6">
+            <Link href="/dashboard/support" onClick={handleLinkClick} className="group flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md">
+              <QuestionMarkCircleIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" /> 
+              <span className="font-medium">Support</span>
+            </Link>
+          </nav>
+
+          <div className="p-4 pt-0 md:p-0 md:pt-6 md:border-t border-gray-200 dark:border-gray-700">
+            <form action={handleLogout}>
+              <button type="submit" className="group flex items-center space-x-3 w-full px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md">
+                <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" /> 
+                <span className="font-medium">Log Out</span>
+              </button>
+            </form>
+            {session?.user?.email && ( <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 p-2 text-center break-all">{session.user.email}</p> )}
+          </div>
         </div>
       </div>
     </aside>
