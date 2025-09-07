@@ -1,27 +1,34 @@
-// frontend/next.config.js
 /** @type {import('next').NextConfig} */
+
+// --- THIS IS THE FIX ---
+// First, we get the full Supabase URL from the environment variable.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+// Then, we safely parse the hostname from it.
+// new URL(supabaseUrl).hostname creates a URL object and extracts just the hostname part.
+// For "https://qpykmvmfpqitrhwoayya.supabase.co", this will be "qpykmvmfpqitrhwoayya.supabase.co".
+// We add a check to make sure the variable exists before trying to parse it.
+const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : '';
+
 const nextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'qpykmvmfpqitrhwoayya.supabase.co', // Your Supabase project hostname
-        port: '', // Usually empty for HTTPS
-        // This pathname allows images from ANY folder inside the 'avatars' bucket,
-        // including directly in 'avatars/' or in 'avatars/banner/' or 'avatars/USER_ID/' etc.
+        // Now, we use the dynamically parsed hostname.
+        hostname: supabaseHostname,
+        port: '',
         pathname: '/storage/v1/object/public/avatars/**',
       },
       {
         protocol: 'https',
-        hostname: 'i.imgur.com', // If you still use imgur links anywhere
+        hostname: 'i.imgur.com',
         port: '',
-        pathname: '/**', // Allow any path under this hostname for imgur
+        pathname: '/**',
       },
-      // Add other trusted hostnames if needed
     ],
   },
-  // ... any other Next.js configurations you have
 };
 
 module.exports = nextConfig;
