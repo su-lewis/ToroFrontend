@@ -120,8 +120,10 @@ export async function sendPasswordReset(formData) {
     return { success: true, message: "If an account with this email exists, a password reset link has been sent." };
 }
 
-// --- THIS IS THE FINAL, CORRECTED ACTION ---
-export async function createCheckoutSession(formData) {
+// ... (all your other server actions like updateProfile, getStripeStatus, etc., are unchanged)
+
+// --- THIS IS THE FINAL, DIAGNOSTIC-READY ACTION ---
+export async function createCheckoutSession(tipData) {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!apiBaseUrl) {
     console.error("[SERVER ACTION] CRITICAL: NEXT_PUBLIC_API_BASE_URL is not set.");
@@ -130,43 +132,44 @@ export async function createCheckoutSession(formData) {
   
   const url = `${apiBaseUrl}/stripe/create-checkout-session`;
 
+  // Aggressive logging to trace the execution path in Vercel logs
+  console.log(`[SERVER ACTION] ==========================================`);
+  console.log(`[SERVER ACTION] CREATE CHECKOUT SESSION INVOKED`);
+  console.log(`[SERVER ACTION] Target Backend URL: ${url}`);
+  console.log(`[SERVER ACTION] Data to be sent:`, tipData);
+  
   try {
-    const tipData = {
-      amount: parseFloat(formData.get('amount')),
-      recipientUsername: formData.get('recipientUsername'),
-      donorName: formData.get('donorName') || 'Anonymous',
-    };
-
-    if (isNaN(tipData.amount) || !tipData.recipientUsername) {
-      return { success: false, message: 'Invalid data provided for tip.' };
-    }
-
-    // This is a direct, unauthenticated fetch call, which is correct for this public action.
+    // This is a direct, unauthenticated fetch call, correct for this public action.
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(tipData),
-      cache: 'no-store', // Ensure we always get a fresh session
+      cache: 'no-store',
     });
 
+    console.log(`[SERVER ACTION] Backend response received with status: ${response.status}`);
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: "An unknown error occurred on the backend." }));
-      console.error(`[SERVER ACTION] Backend responded with error ${response.status}:`, errorData);
-      return { success: false, message: errorData.message || 'Could not initiate payment.' };
+      const errorData = await response.json().catch(() => ({ message: "Failed to parse backend error response." }));
+      throw new Error(errorData.message || `Backend responded with status ${response.status}`);
     }
 
     const session = await response.json();
     if (!session.id) {
-      console.error('[SERVER ACTION] Backend response is missing a session ID.');
-      return { success: false, message: 'Invalid session data received from server.' };
+      throw new Error('Invalid session data received from server.');
     }
 
+    console.log(`[SERVER ACTION] Success! Received session ID: ${session.id}`);
+    console.log(`[SERVER ACTION] ==========================================`);
     return { success: true, sessionId: session.id };
 
   } catch (error) {
-    console.error("[SERVER ACTION] CRITICAL FETCH ERROR in createCheckoutSession:", error);
-    // This will catch network errors if Vercel cannot reach Render.
-    return { success: false, message: 'An unexpected server connection error occurred.' };
+    // This block will catch network errors if Vercel cannot reach Render.
+    console.error("[SERVER ACTION] !!! CRITICAL FETCH ERROR !!!");
+    console.error("[SERVER ACTION] This means Vercel cannot connect to your Render backend.");
+    console.error(`[SERVER ACTION] Error Message: ${error.message}`);
+    console.error(`[SERVER ACTION] ==========================================`);
+    return { success: false, message: 'A server connection error occurred. Please check the logs.' };
   }
 }
 

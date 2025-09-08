@@ -1,27 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { createCheckoutSession } from '@/app/actions'; // Using Server Action
+import { useState, useTransition } from 'react';
+import { createCheckoutSession } from '@/app/actions';
 import { loadStripe } from '@stripe/stripe-js';
-import { useTransition } from 'react'; // For Server Action loading state
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-// Helper to get currency symbol
 const getCurrencySymbol = (currencyCode = 'usd') => {
-    const symbols = {
-        usd: '$',
-        eur: '€',
-        gbp: '£',
-        cad: 'C$',
-        aud: 'A$',
-    };
+    const symbols = { usd: '$', eur: '€', gbp: '£', cad: 'C$', aud: 'A$' };
     return symbols[currencyCode.toLowerCase()] || '$';
 };
 
 export default function SendTipButton({ recipientUsername, recipientDisplayName, payoutsInUsd, stripeDefaultCurrency }) {
   
-  // Updated constants
   const MINIMUM_TIP_AMOUNT = 1;
   const MAXIMUM_TIP_AMOUNT = 2500;
   
@@ -43,54 +34,52 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
     return { total, fee };
   };
 
-  // This is used for the real-time display in the JSX
   const creatorAmountNumForDisplay = parseFloat(amount);
   const { total: totalDonorPaysNum, fee: platformFeeNum } = calculateTotalDonorPays(creatorAmountNumForDisplay);
 
-  const handleTip = async (formData) => {
-    // Re-parse the amount from state *at the time of submission* for validation
+  const handlePayClick = () => {
+    setError(null);
     const creatorAmountNum = parseFloat(amount);
 
-    if (isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT) {
-      setError(`Please enter a valid amount (min ${currencySymbol}${MINIMUM_TIP_AMOUNT.toFixed(2)}).`);
+    if (isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT || creatorAmountNum > MAXIMUM_TIP_AMOUNT) {
+      setError(`Amount must be between ${currencySymbol}${MINIMUM_TIP_AMOUNT} and ${currencySymbol}${MAXIMUM_TIP_AMOUNT}.`);
       return;
     }
-    if (creatorAmountNum > MAXIMUM_TIP_AMOUNT) {
-      setError(`Amount cannot exceed ${currencySymbol}${MAXIMUM_TIP_AMOUNT.toFixed(2)}.`);
-      return;
-    }
-    setError(null);
     
     startTransition(async () => {
-      const result = await createCheckoutSession(formData);
-      if (!result.success) {
+      const tipData = {
+        amount: creatorAmountNum,
+        recipientUsername: recipientUsername,
+        donorName: donorName || 'Anonymous',
+      };
+      
+      const result = await createCheckoutSession(tipData);
+
+      if (result.success) {
+        const stripe = await stripePromise;
+        if (stripe) {
+          const { error: stripeError } = await stripe.redirectToCheckout({ sessionId: result.sessionId });
+          if (stripeError) {
+            setError(stripeError.message || "Could not redirect to Stripe.");
+          }
+        } else {
+            setError("Stripe.js failed to load. Please check your connection.");
+        }
+      } else {
         setError(result.message);
-        return;
-      }
-      const sessionId = result.sessionId;
-      const stripe = await stripePromise;
-      if (!stripe) {
-        setError('Stripe.js has not loaded yet.');
-        return;
-      }
-      const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
-      if (stripeError) {
-        setError(stripeError.message || "Could not redirect to Stripe.");
       }
     });
   };
 
   return (
-    <form action={handleTip} className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
+    // This is now a simple div container, not a <form>
+    <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
       <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100 text-center">
         Send a Tip to {recipientDisplayName || recipientUsername}
       </h3>
       
       {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4 p-2 bg-red-100 dark:bg-red-900/30 rounded-md text-center">{error}</p>}
       
-      <input type="hidden" name="amount" value={amount} />
-      <input type="hidden" name="recipientUsername" value={recipientUsername} />
-
       <div className="flex items-center justify-center space-x-2 mb-4">
         <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">{currencySymbol}</span>
         <input
@@ -98,13 +87,10 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
           value={amount}
           onChange={(e) => {
             const val = e.target.value;
-            // The validation here correctly restricts input
             if (val === "" || (/^\d*\.?\d{0,2}$/.test(val) && parseFloat(val) <= MAXIMUM_TIP_AMOUNT)) {
                 setAmount(val);
             }
           }}
-          min={MINIMUM_TIP_AMOUNT.toFixed(2)}
-          max={MAXIMUM_TIP_AMOUNT.toFixed(2)}
           className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-2xl font-semibold text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm"
           placeholder={MINIMUM_TIP_AMOUNT.toFixed(2)}
         />
@@ -125,8 +111,6 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
 
       <div className="mb-4 flex flex-col items-center">
         <input
-          id="donorName"
-          name="donorName"
           value={donorName}
           onChange={(e) => setDonorName(e.target.value)}
           placeholder="Anonymous"
@@ -136,13 +120,14 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
       </div>
 
       <button
-        type="submit"
-        disabled={isPending || isNaN(creatorAmountNumForDisplay) || creatorAmountNumForDisplay < MINIMUM_TIP_AMOUNT || creatorAmountNumForDisplay > MAXIMUM_TIP_AMOUNT}
+        type="button" // Use type="button" to prevent default form submission
+        onClick={handlePayClick} // Call our handler on click
+        disabled={isPending || isNaN(creatorAmountNumForDisplay) || creatorAmountNumForDisplay < MINIMUM_TIP_AMOUNT}
         className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
       >
          {isPending ? 'Processing...' : `Pay ${currencySymbol}${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}
       </button>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">Powered by Stripe</p>
-    </form>
+    </div>
   );
 }
