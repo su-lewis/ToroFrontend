@@ -37,7 +37,7 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
   const creatorAmountNumForDisplay = parseFloat(amount);
   const { total: totalDonorPaysNum, fee: platformFeeNum } = calculateTotalDonorPays(creatorAmountNumForDisplay);
 
-  const handlePayClick = () => {
+   const handlePayClick = () => {
     setError(null);
     const creatorAmountNum = parseFloat(amount);
 
@@ -55,18 +55,12 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
       
       const result = await createCheckoutSession(tipData);
 
-      if (result.success) {
-        const stripe = await stripePromise;
-        if (stripe) {
-          const { error: stripeError } = await stripe.redirectToCheckout({ sessionId: result.sessionId });
-          if (stripeError) {
-            setError(stripeError.message || "Could not redirect to Stripe.");
-          }
-        } else {
-            setError("Stripe.js failed to load. Please check your connection.");
-        }
+      // --- THIS IS THE FIX ---
+      // Instead of calling Stripe.js, we now perform a direct redirect.
+      if (result.success && result.url) {
+        window.location.href = result.url;
       } else {
-        setError(result.message);
+        setError(result.message || "Could not create payment session.");
       }
     });
   };

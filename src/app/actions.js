@@ -126,7 +126,7 @@ export async function sendPasswordReset(formData) {
 export async function createCheckoutSession(tipData) {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const url = `${apiBaseUrl}/stripe/create-checkout-session`;
-
+  
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -140,21 +140,21 @@ export async function createCheckoutSession(tipData) {
       throw new Error(errorData.message || 'Backend responded with an error.');
     }
 
-    // --- THIS IS THE FIX ---
-    // The backend now returns the full session object. We extract the ID from it here.
     const session = await response.json();
-    if (!session.id) {
-      throw new Error('Invalid session data received from server. ID is missing.');
+    // --- THIS IS THE FIX ---
+    // We now check for and return the full URL from the session object.
+    if (!session.url) {
+      throw new Error('Checkout URL not found in server response.');
     }
-    
-    // Return just the session ID to the client component.
-    return { success: true, sessionId: session.id };
+
+    return { success: true, url: session.url };
 
   } catch (error) {
-    console.error("[SERVER ACTION] Error in createCheckoutSession:", error.message);
+    console.error("[SERVER ACTION] CRITICAL ERROR in createCheckoutSession:", error.message);
     return { success: false, message: 'An unexpected server connection error occurred.' };
   }
 }
+
 // --- MODIFY THIS ACTION ---
 export async function createStripeOnboardLink(formData) { // <-- It now accepts formData
     try {
