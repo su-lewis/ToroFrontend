@@ -125,21 +125,9 @@ export async function sendPasswordReset(formData) {
 // --- THIS IS THE FINAL, DIAGNOSTIC-READY ACTION ---
 export async function createCheckoutSession(tipData) {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!apiBaseUrl) {
-    console.error("[SERVER ACTION] CRITICAL: NEXT_PUBLIC_API_BASE_URL is not set.");
-    return { success: false, message: 'Server is not configured correctly.' };
-  }
-  
   const url = `${apiBaseUrl}/stripe/create-checkout-session`;
 
-  // Aggressive logging to trace the execution path in Vercel logs
-  console.log(`[SERVER ACTION] ==========================================`);
-  console.log(`[SERVER ACTION] CREATE CHECKOUT SESSION INVOKED`);
-  console.log(`[SERVER ACTION] Target Backend URL: ${url}`);
-  console.log(`[SERVER ACTION] Data to be sent:`, tipData);
-  
   try {
-    // This is a direct, unauthenticated fetch call, correct for this public action.
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -147,32 +135,26 @@ export async function createCheckoutSession(tipData) {
       cache: 'no-store',
     });
 
-    console.log(`[SERVER ACTION] Backend response received with status: ${response.status}`);
-
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: "Failed to parse backend error response." }));
-      throw new Error(errorData.message || `Backend responded with status ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Backend responded with an error.');
     }
 
+    // --- THIS IS THE FIX ---
+    // The backend now returns the full session object. We extract the ID from it here.
     const session = await response.json();
     if (!session.id) {
-      throw new Error('Invalid session data received from server.');
+      throw new Error('Invalid session data received from server. ID is missing.');
     }
-
-    console.log(`[SERVER ACTION] Success! Received session ID: ${session.id}`);
-    console.log(`[SERVER ACTION] ==========================================`);
+    
+    // Return just the session ID to the client component.
     return { success: true, sessionId: session.id };
 
   } catch (error) {
-    // This block will catch network errors if Vercel cannot reach Render.
-    console.error("[SERVER ACTION] !!! CRITICAL FETCH ERROR !!!");
-    console.error("[SERVER ACTION] This means Vercel cannot connect to your Render backend.");
-    console.error(`[SERVER ACTION] Error Message: ${error.message}`);
-    console.error(`[SERVER ACTION] ==========================================`);
-    return { success: false, message: 'A server connection error occurred. Please check the logs.' };
+    console.error("[SERVER ACTION] Error in createCheckoutSession:", error.message);
+    return { success: false, message: 'An unexpected server connection error occurred.' };
   }
 }
-
 // --- MODIFY THIS ACTION ---
 export async function createStripeOnboardLink(formData) { // <-- It now accepts formData
     try {
