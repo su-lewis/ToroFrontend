@@ -120,40 +120,38 @@ export async function sendPasswordReset(formData) {
     return { success: true, message: "If an account with this email exists, a password reset link has been sent." };
 }
 
+// --- THIS IS THE FINAL, CORRECTED ACTION ---
 export async function createCheckoutSession(formData) {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!apiBaseUrl) {
+    console.error("[SERVER ACTION] CRITICAL: NEXT_PUBLIC_API_BASE_URL is not set.");
+    return { success: false, message: 'Server is not configured correctly.' };
+  }
+  
   const url = `${apiBaseUrl}/stripe/create-checkout-session`;
 
-  // --- DIAGNOSTIC LOGS ---
-  console.log(`[SERVER ACTION] Initiating createCheckoutSession.`);
-  console.log(`[SERVER ACTION] Target Backend URL: ${url}`);
-  
   try {
     const tipData = {
       amount: parseFloat(formData.get('amount')),
       recipientUsername: formData.get('recipientUsername'),
-      donorName: formData.get('donorName'),
+      donorName: formData.get('donorName') || 'Anonymous',
     };
-    
-    console.log('[SERVER ACTION] Tip Data to be sent:', tipData);
 
     if (isNaN(tipData.amount) || !tipData.recipientUsername) {
-      console.error('[SERVER ACTION] Validation failed: Invalid data provided.');
       return { success: false, message: 'Invalid data provided for tip.' };
     }
 
+    // This is a direct, unauthenticated fetch call, which is correct for this public action.
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(tipData),
-      cache: 'no-store',
+      cache: 'no-store', // Ensure we always get a fresh session
     });
 
-    console.log(`[SERVER ACTION] Received response from backend with status: ${response.status}`);
-
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: "Failed to parse error response from backend." }));
-      console.error('[SERVER ACTION] Backend responded with an error:', errorData);
+      const errorData = await response.json().catch(() => ({ message: "An unknown error occurred on the backend." }));
+      console.error(`[SERVER ACTION] Backend responded with error ${response.status}:`, errorData);
       return { success: false, message: errorData.message || 'Could not initiate payment.' };
     }
 
@@ -163,23 +161,13 @@ export async function createCheckoutSession(formData) {
       return { success: false, message: 'Invalid session data received from server.' };
     }
 
-    console.log(`[SERVER ACTION] Success! Got session ID: ${session.id}`);
     return { success: true, sessionId: session.id };
 
   } catch (error) {
     console.error("[SERVER ACTION] CRITICAL FETCH ERROR in createCheckoutSession:", error);
+    // This will catch network errors if Vercel cannot reach Render.
     return { success: false, message: 'An unexpected server connection error occurred.' };
   }
-}
-
-export async function getStripeStatus() {
-    try {
-        const status = await fetchProtectedDataFromServer('/stripe/connect/account-status');
-        return { success: true, data: status };
-    } catch (error) {
-        if (error.status === 404) { return { success: true, data: null }; }
-        return { success: false, message: error.bodyText || error.message || "Failed to get Stripe status." };
-    }
 }
 
 // --- MODIFY THIS ACTION ---
