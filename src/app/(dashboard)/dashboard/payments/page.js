@@ -128,8 +128,6 @@ export default function PaymentsPage() {
 
     const availableBalance = balance?.available?.[0];
     const periodStats = stats?.period;
-    
-    // Check if the user's native currency is USD.
     const isUsdNative = user?.stripeDefaultCurrency === 'usd';
 
     if (isLoadingInitial) return <div className="text-center p-10 text-gray-500 dark:text-gray-400">Loading payment analytics...</div>;
@@ -176,25 +174,19 @@ export default function PaymentsPage() {
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                             {isUsdNative ? (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Your payout currency is USD, so payments will always be processed in USD. This setting is locked.
-                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Your payout currency is USD, so payments will always be processed in USD. This setting is locked.</p>
                             ) : user?.payoutsInUsd ? (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    When enabled, donors will see and pay in US Dollars ($). Recommended for a global audience.
-                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">When enabled, donors will pay in US Dollars ($). Recommended for a global audience.</p>
                             ) : (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    When disabled, donors will pay in your native currency ({user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).
-                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">When disabled, donors will pay in your native currency ({user?.stripeDefaultCurrency?.toUpperCase() || 'Not Set'}).</p>
                             )}
                         </div>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Use Stripe Instant Payouts</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{user?.autoInstantPayoutsEnabled ? 'Enabled' : 'Disabled'}</p>
+                                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Automatic Payouts</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{user?.autoInstantPayoutsEnabled ? 'Instant' : 'Standard Daily'}</p>
                             </div>
                             <Switch 
                                 checked={user?.autoInstantPayoutsEnabled || false} 
@@ -206,8 +198,11 @@ export default function PaymentsPage() {
                             </Switch>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                             {user?.autoInstantPayoutsEnabled ? (<p className="text-xs text-gray-500 dark:text-gray-400">Your available balance will be paid out instantly (1% fee, ~30 min).</p>) 
-                             : (<p className="text-xs text-gray-500 dark:text-gray-400">Your balance will be paid out on a standard daily schedule (Free, ~2-5 days).</p>)}
+                             {user?.autoInstantPayoutsEnabled ? (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">When your balance becomes available, it will be paid out instantly (~30 min, 1% fee).</p>
+                             ) : (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Your available balance will be paid out automatically on a standard daily schedule (Free, ~2-5 days).</p>
+                             )}
                         </div>
                     </div>
                 </div>
@@ -218,12 +213,12 @@ export default function PaymentsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Available for Payout</h3>
-                        <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">{availableBalance ? formatCurrency(availableBalance.amount, availableBalance.currency) : '$0.00'}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your current Stripe balance.</p>
+                        <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">{availableBalance ? formatCurrency(availableBalance.amount, availableBalance.currency) : formatCurrency(0, user?.stripeDefaultCurrency || 'usd')}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Reflects funds that have cleared the pending period.</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Request Manual Payout</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">Instantly pay out your available balance now.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">Request a free, standard payout of your available balance (arrives in 2-5 business days).</p>
                         <button onClick={() => handleAction(triggerInstantPayout)} disabled={isActionLoading || !availableBalance || availableBalance.amount <= 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
                             {isActionLoading ? 'Processing...' : 'Payout Now'}
                         </button>
