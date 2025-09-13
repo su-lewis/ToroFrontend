@@ -127,6 +127,7 @@ export default function PaymentsPage() {
     };
 
     const availableBalance = balance?.available?.[0];
+    const pendingBalance = balance?.pending?.[0];
     const periodStats = stats?.period;
     const isUsdNative = user?.stripeDefaultCurrency === 'usd';
 
@@ -211,17 +212,34 @@ export default function PaymentsPage() {
             <div>
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Payouts & Balance</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Available for Payout</h3>
-                        <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">{availableBalance ? formatCurrency(availableBalance.amount, availableBalance.currency) : formatCurrency(0, user?.stripeDefaultCurrency || 'usd')}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Reflects funds that have cleared the pending period.</p>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Available for Payout</h3>
+                            <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">
+                                {availableBalance ? formatCurrency(availableBalance.amount, availableBalance.currency) : formatCurrency(0, user?.stripeDefaultCurrency || 'usd')}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Funds that have cleared and can be paid out.</p>
+                        </div>
+                        <div>
+                            <button 
+                                onClick={() => handleAction(triggerInstantPayout)} 
+                                disabled={isActionLoading || !availableBalance || availableBalance.amount <= 0} 
+                                className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isActionLoading ? 'Processing...' : 'Payout Now (Standard)'}
+                            </button>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">Free, arrives in 2-5 business days.</p>
+                        </div>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Request Manual Payout</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">Click here to request a free, standard payout of your available balance (arrives in 2-5 business days).</p>
-                        <button onClick={() => handleAction(triggerInstantPayout)} disabled={isActionLoading || !availableBalance || availableBalance.amount <= 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isActionLoading ? 'Processing...' : 'Payout Now'}
-                        </button>
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Pending Balance</h3>
+                        <p className="text-4xl font-bold text-gray-500 dark:text-gray-400 mt-2">
+                            {pendingBalance ? formatCurrency(pendingBalance.amount, pendingBalance.currency) : formatCurrency(0, user?.stripeDefaultCurrency || 'usd')}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Funds from recent gifts that are currently clearing.</p>
+                        <div className="mt-4 w-full bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 text-center text-xs font-medium py-2 px-4 rounded-md">
+                            Typically available in 2-7 days.
+                        </div>
                     </div>
                 </div>
             </div>
