@@ -185,8 +185,8 @@ export default function PaymentsPage() {
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Automatic Payouts</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{user?.autoInstantPayoutsEnabled ? 'Instant' : 'Standard Daily'}</p>
+                                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">Turn on Stripe Instant Payouts?</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{user?.autoInstantPayoutsEnabled ? 'Instant Payouts are ON' : 'Instant Payouts are OFF'}</p>
                             </div>
                             <Switch 
                                 checked={user?.autoInstantPayoutsEnabled || false} 
@@ -199,9 +199,9 @@ export default function PaymentsPage() {
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                              {user?.autoInstantPayoutsEnabled ? (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">When your balance becomes available, it will be paid out instantly (~30 min, 1% fee).</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">When ON, your available balance will be paid out to your bank automatically and instantly (~30 min). This service has a 1% fee charged by Stripe.</p>
                              ) : (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Your available balance will be paid out automatically on a standard daily schedule (Free, ~2-5 days).</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">When OFF, automatic payouts are disabled. To receive your funds, you must use the "Payout Now" button for a standard payout.</p>
                              )}
                         </div>
                     </div>
@@ -218,14 +218,14 @@ export default function PaymentsPage() {
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Request Manual Payout</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">Request a free, standard payout of your available balance (arrives in 2-5 business days).</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">Click here to request a free, standard payout of your available balance (arrives in 2-5 business days).</p>
                         <button onClick={() => handleAction(triggerInstantPayout)} disabled={isActionLoading || !availableBalance || availableBalance.amount <= 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
                             {isActionLoading ? 'Processing...' : 'Payout Now'}
                         </button>
                     </div>
                 </div>
             </div>
-
+            
             <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
                     <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Statistics</h2>
