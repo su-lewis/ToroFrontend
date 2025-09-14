@@ -318,3 +318,32 @@ export async function getUnifiedHistory() {
         return { success: false, message: error.bodyText || error.message || "Failed to fetch transaction history." };
     }
 }
+
+// --- NEW ACTION FOR IMAGE AUTO-SAVE ---
+export async function updateProfileImages({ profileImageUrl, bannerImageUrl }) {
+  try {
+    const dataToUpdate = {};
+    if (profileImageUrl !== undefined) dataToUpdate.profileImageUrl = profileImageUrl;
+    if (bannerImageUrl !== undefined) dataToUpdate.bannerImageUrl = bannerImageUrl;
+
+    if (Object.keys(dataToUpdate).length === 0) {
+      return { success: true }; // Nothing to update
+    }
+
+    const updatedProfile = await fetchProtectedDataFromServer('/users/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataToUpdate),
+    });
+
+    revalidatePath('/dashboard/profile');
+    if (updatedProfile.username) {
+      revalidatePath(`/${updatedProfile.username}`);
+    }
+
+    return { success: true, message: 'Image updated!', data: updatedProfile };
+  } catch (error) {
+    console.error("Error in updateProfileImages action:", error);
+    return { success: false, message: error.bodyText || 'Failed to save image.' };
+  }
+}
