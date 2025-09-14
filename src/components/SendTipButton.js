@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link'; // <-- Import the Link component
+import Link from 'next/link';
 import { createCheckoutSession } from '@/app/actions';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -25,12 +25,10 @@ export default function SendTipButton({
   const MINIMUM_TIP_AMOUNT = 1;
   const MAXIMUM_TIP_AMOUNT = 2500;
   
-  const [amount, setAmount] = useState(fixedAmount ? fixedAmount.toString() : ''); // Start with empty for placeholder
+  const [amount, setAmount] = useState(fixedAmount ? fixedAmount.toString() : '');
   const [donorName, setDonorName] = useState('');
   const [error, setError] = useState(null);
   const [isPending, startTransition] = useTransition();
-
-  // --- NEW STATE: Controls the expanded view ---
   const [isExpanded, setIsExpanded] = useState(false);
 
   const displayCurrency = payoutsInUsd ? 'usd' : (stripeDefaultCurrency || 'usd');
@@ -76,7 +74,6 @@ export default function SendTipButton({
     });
   };
 
-  // The small "Fund" button for wishlist items remains unchanged.
   if (isWishlistItem) {
     return (
       <button
@@ -90,37 +87,29 @@ export default function SendTipButton({
     )
   }
 
-  // --- This is the new, interactive tip jar component ---
   return (
     <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
       
-      {/* --- Fee display is now outside and above the form, and only shows when expanded --- */}
+      {/* --- THIS IS THE FIX (Part 1) --- */}
+      {/* The "Total You Pay" div has been removed. */}
       {isExpanded && creatorAmountNumForDisplay > 0 && (
         <div className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4 py-3 transition-opacity duration-300">
             <div className="flex justify-between items-center px-2">
                 <span>Platform & Stripe Fee:</span>
                  <span className="font-semibold">+ {currencySymbol}{platformFeeNum.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center px-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                <span className="font-bold">Total You Pay:</span>
-                 <span className="font-bold">{currencySymbol}{totalDonorPaysNum.toFixed(2)}</span>
-            </div>
         </div>
       )}
 
-      {/* The main container for the interactive input and form */}
       <div>
-        {/* --- The header is removed --- */}
-        
         {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4 p-2 bg-red-100 dark:bg-red-900/30 rounded-md text-center">{error}</p>}
         
-        {/* --- The new input box --- */}
         <div className="relative flex items-center mb-4">
           <span className="absolute left-3 text-2xl font-medium text-gray-500 dark:text-gray-400">{currencySymbol}</span>
           <input
             type="text"
             value={amount}
-            onFocus={() => setIsExpanded(true)} // Expand the form on focus
+            onFocus={() => setIsExpanded(true)}
             onChange={(e) => {
               const val = e.target.value;
               if (val === "" || (/^\d*\.?\d{0,2}$/.test(val) && parseFloat(val) <= MAXIMUM_TIP_AMOUNT)) {
@@ -133,14 +122,14 @@ export default function SendTipButton({
           <span className="absolute right-3 text-lg font-semibold text-gray-400 dark:text-gray-500">{displayCurrency.toUpperCase()}</span>
         </div>
         
-        {/* --- The expandable section --- */}
         <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96' : 'max-h-0'}`}>
           <div className="pt-4 space-y-4">
             <div className="flex flex-col items-center">
               <input
                 value={donorName}
                 onChange={(e) => setDonorName(e.target.value)}
-                placeholder="Your name (optional)"
+                // --- THIS IS THE FIX (Part 2) ---
+                placeholder="Anonymous" // Changed back from "Name (optional)"
                 maxLength="25"
                 className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-lg text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm text-center"
               />
@@ -157,7 +146,6 @@ export default function SendTipButton({
           </div>
         </div>
 
-        {/* --- The updated footer text --- */}
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
           By sending a tip, you agree to our{' '}
           <Link href="/terms-of-service" target="_blank" className="hover:underline font-medium">
