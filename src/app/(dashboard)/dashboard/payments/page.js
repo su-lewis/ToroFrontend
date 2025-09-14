@@ -96,15 +96,24 @@ export default function PaymentsPage() {
             if (result.success) {
                 if (result.url) window.open(result.url, '_blank', 'noopener,noreferrer');
                 if (result.message) setSuccess(result.message);
+                
+                // --- THIS IS THE FIX ---
                 if (actionFn === triggerInstantPayout) {
+                    // 1. Wait for 2 seconds to give Stripe's API time to update.
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // 2. Now, fetch the new balance.
                     const balanceResult = await getStripeBalance();
                     if (balanceResult.success) setBalance(balanceResult.data);
                 }
+                
                 if (actionFn === setInstantPayoutMode || actionFn === updateUserPayoutsInUsd) {
                     const userResult = await getUserSettings();
                     if (userResult.success) setUser(userResult.data);
                 }
-            } else { setError(result.message || 'An unknown error occurred.'); }
+            } else { 
+                setError(result.message || 'An unknown error occurred.'); 
+            }
             setIsActionLoading(false);
         });
     };
