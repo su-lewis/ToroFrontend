@@ -239,28 +239,29 @@ export async function setInstantPayoutMode(enabled) {
   }
 }
 
-// --- LINK ACTIONS ---
-export async function getLinks() {
+// --- PAGE BLOCK ACTIONS (Replaces LINK ACTIONS) ---
+export async function getPageBlocks() {
     try {
-        const links = await fetchProtectedDataFromServer('/links');
-        return { success: true, data: links };
+        const blocks = await fetchProtectedDataFromServer('/page-blocks');
+        return { success: true, data: blocks };
     } catch (error) {
-        return { success: false, message: error.bodyText || error.message || "Failed to fetch links." };
+        return { success: false, message: error.bodyText || error.message || "Failed to fetch page content." };
     }
 }
 
-export async function saveLinks(linksToSave) {
+export async function savePageBlocks(blocksToSave) {
     try {
-        const response = await fetchProtectedDataFromServer('/links/bulk-update', {
+        const response = await fetchProtectedDataFromServer('/page-blocks/bulk-update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ links: linksToSave }),
+            body: JSON.stringify({ blocks: blocksToSave }),
         });
-        revalidatePath('/dashboard/links');
-        revalidatePath('/', 'layout');
-        return { success: true, data: response, message: 'Links saved successfully!' };
+        // Revalidate the editor page and the public profile page
+        revalidatePath('/dashboard/page-editor');
+        revalidatePath('/', 'layout'); // Revalidate all public profiles
+        return { success: true, data: response, message: 'Page saved successfully!' };
     } catch (error) {
-        return { success: false, message: error.bodyText || error.message || 'Failed to save links.' };
+        return { success: false, message: error.bodyText || error.message || 'Failed to save page.' };
     }
 }
 

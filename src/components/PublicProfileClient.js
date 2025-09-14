@@ -4,23 +4,25 @@ import Image from 'next/image';
 import SendTipButton from '@/components/SendTipButton';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { useTheme } from 'next-themes';
+import { GiftIcon } from '@heroicons/react/24/solid';
+import { useEffect, useState } from 'react';
 
-// These are our default colors
-const DEFAULT_DARK_BG = '#111827';  // Tailwind gray-900
-const DEFAULT_LIGHT_BG = '#F9FAFB'; // Tailwind gray-50
-const OLD_DEFAULT_BG = '#FFFFFF';   // The old white default
+const DEFAULT_DARK_BG = '#111827';
+const DEFAULT_LIGHT_BG = '#F9FAFB';
+const OLD_DEFAULT_BG = '#FFFFFF';
 
 export default function PublicProfileClient({ profileData, paymentCancelled }) {
   const { resolvedTheme } = useTheme();
+  const [showCancelledMessage, setShowCancelledMessage] = useState(paymentCancelled);
 
-  // Destructure all the data passed from the server page
+  // Destructure with default empty array for pageBlocks
   const {
     displayName,
     username,
     bio,
     profileImageUrl,
     bannerImageUrl,
-    links = [],
+    pageBlocks = [],
     stripeAccountId,
     stripeOnboardingComplete,
     profileBackgroundColor,
@@ -28,65 +30,67 @@ export default function PublicProfileClient({ profileData, paymentCancelled }) {
     stripeDefaultCurrency,
   } = profileData;
 
-  // This logic is also from your original file
-  const effectiveDisplayName = profileData.displayName || profileData.username;
+  const effectiveDisplayName = displayName || username;
 
-  // --- THIS IS THE CORE FIX ---
-  // 1. Start with the color from the database.
   let finalBackgroundColor;
-
-  // 1. Check if the user has a custom color set.
-  // A color is considered "not custom" if it's the new dark default OR the old white default.
-  const hasCustomColor = profileBackgroundColor &&
-    profileBackgroundColor.toUpperCase() !== DEFAULT_DARK_BG.toUpperCase() &&
-    profileBackgroundColor.toUpperCase() !== OLD_DEFAULT_BG.toUpperCase();
+  const hasCustomColor = profileBackgroundColor && profileBackgroundColor.toUpperCase() !== DEFAULT_DARK_BG.toUpperCase() && profileBackgroundColor.toUpperCase() !== OLD_DEFAULT_BG.toUpperCase();
 
   if (hasCustomColor) {
-    // 2. If they have a custom color, ALWAYS use it.
     finalBackgroundColor = profileBackgroundColor;
   } else {
-    // 3. Otherwise, apply the theme-appropriate default.
     finalBackgroundColor = resolvedTheme === 'light' ? DEFAULT_LIGHT_BG : DEFAULT_DARK_BG;
   }
 
   const pageStyle = { backgroundColor: finalBackgroundColor };
 
-  // The entire JSX from your original page.js goes here.
+  const formatCurrency = (cents, currency = 'usd') => {
+      try {
+          return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency.toUpperCase() }).format(cents / 100);
+      } catch (e) { return `$${(cents / 100).toFixed(2)}`; }
+  };
+
+  useEffect(() => {
+    if (paymentCancelled) {
+        const timer = setTimeout(() => {
+            setShowCancelledMessage(false);
+        }, 5000); // Hide message after 5 seconds
+        return () => clearTimeout(timer);
+    }
+  }, [paymentCancelled]);
+
   return (
     <main style={pageStyle} className="min-h-screen transition-colors duration-500">
       <div className="container mx-auto max-w-3xl flex flex-col items-center pb-12">
-        <div
-          className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg"
-          style={{ backgroundColor: '#D1D5DB' }} // This is Tailwind's gray-300 color
-        >
+        <div className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg" style={{ backgroundColor: '#D1D5DB' }}>
           {bannerImageUrl && <Image src={bannerImageUrl} alt={`${effectiveDisplayName}'s banner`} layout="fill" className="object-cover" priority={true} />}
+          <div className="absolute top-4 right-4 z-10">
+            <ThemeSwitcher />
+          </div>
         </div>
 
         <div className="w-full max-w-2xl bg-white dark:bg-gray-800 p-6 md:p-8 shadow-xl relative z-10 -mt-16 md:-mt-20 rounded-lg mx-4 sm:mx-0">
-          <div className="absolute top-3 left-3">
-            <ThemeSwitcher />
-          </div>
-          <div className="flex justify-center -mt-20 md:-mt-24 mb-4">
-            {profileImageUrl ? (
-              <Image src={profileImageUrl} alt={`Profile picture of ${effectiveDisplayName}`} width={160} height={160} className="rounded-full w-32 h-32 md:w-40 md:h-40 object-cover border-4 border-white dark:border-gray-700 shadow-2xl bg-gray-200" priority />
-            ) : (
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 text-5xl md:text-6xl font-semibold shadow-2xl border-4 border-white dark:border-gray-700">
-                {effectiveDisplayName.charAt(0).toUpperCase()}
-              </div>
-            )}
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full -mt-20 md:-mt-24 border-4 border-white dark:border-gray-800 shadow-lg overflow-hidden relative">
+              {profileImageUrl ? (
+                <Image src={profileImageUrl} alt={effectiveDisplayName} layout="fill" className="object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-6xl font-bold">
+                  {effectiveDisplayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div className="text-center mt-4">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-100">{effectiveDisplayName}</h1>
+              {displayName && <p className="text-lg text-gray-500 dark:text-gray-400">@{username}</p>}
+              {bio && <p className="text-md text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg mx-auto mt-3">{bio}</p>}
+            </div>
           </div>
 
-          {paymentCancelled && (
-            <div role="alert" className="mb-6 p-3 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300 rounded-md text-sm text-center">
-              <p className="font-semibold">Payment Cancelled.</p>
+          {showCancelledMessage && (
+            <div className="p-3 mb-6 rounded-md bg-yellow-50 dark:bg-yellow-900/30 text-center text-sm text-yellow-800 dark:text-yellow-300">
+              Your payment was cancelled.
             </div>
           )}
-
-          <div className="text-center text-gray-900 dark:text-gray-100">
-            <h1 className="text-3xl md:text-4xl font-extrabold mt-2 mb-1">{effectiveDisplayName}</h1>
-            {displayName && <p className="text-lg text-gray-500 dark:text-gray-400 mb-3">@{username}</p>}
-            {bio && <p className="text-md text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg mx-auto mb-6">{bio}</p>}
-          </div>
 
           <div className="mb-8">
             {stripeAccountId && stripeOnboardingComplete ? (
@@ -97,25 +101,68 @@ export default function PublicProfileClient({ profileData, paymentCancelled }) {
                 stripeDefaultCurrency={stripeDefaultCurrency}
               />
             ) : (
-              profileData &&
               <div className="mt-6 p-3 rounded-md shadow text-center text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                {effectiveDisplayName} is not set up to receive payments.
+                {effectiveDisplayName} is not set up to receive payments yet.
               </div>
             )}
           </div>
 
           <div className="w-full">
-            {links.length > 0 && (<h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4 text-center">Links</h2>)}
+            {pageBlocks.length > 0 && (<h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4 text-center">Links & Wishlist</h2>)}
             <div className="space-y-4">
-              {links.length > 0 ? (
-                links.map((link) => (
-                  <a key={link.id} href={link.url.startsWith('http') ? link.url : `//${link.url}`} target="_blank" rel="noopener noreferrer nofollow"
-                    className="block w-full text-center font-semibold py-3 px-5 rounded-lg text-lg shadow-md hover:shadow-lg transition-all bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {link.title}
-                  </a>
-                ))
-              ) : (<p className="italic py-3 text-center text-gray-500 dark:text-gray-400">This user hasn't added any links yet.</p>)}
+              {pageBlocks.length > 0 ? (
+                pageBlocks.map((block) => {
+                  if (block.type === 'LINK') {
+                    return (
+                      <a key={block.id} href={block.url && (block.url.startsWith('http') ? block.url : `//${block.url}`)} target="_blank" rel="noopener noreferrer nofollow"
+                        className="block w-full text-center font-semibold py-3 px-5 rounded-lg text-lg shadow-md hover:shadow-lg transition-all bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {block.title}
+                      </a>
+                    );
+                  } else if (block.type === 'WISHLIST') {
+                    const purchasedCount = block._count.payments;
+                    const progress = block.isUnlimited || !block.quantityGoal ? 100 : (purchasedCount / block.quantityGoal) * 100;
+                    const isCompleted = !block.isUnlimited && block.quantityGoal && purchasedCount >= block.quantityGoal;
+
+                    return (
+                      <div key={block.id} className={`p-4 rounded-lg shadow-md border ${isCompleted ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800'}`}>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center min-w-0">
+                            <GiftIcon className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-bold text-gray-800 dark:text-gray-100 truncate">{block.title}</p>
+                              <p className="text-sm text-green-700 dark:text-green-300 font-semibold">{formatCurrency(block.priceCents, stripeDefaultCurrency || 'usd')}</p>
+                            </div>
+                          </div>
+                          {!isCompleted && (
+                            <SendTipButton
+                              recipientUsername={username}
+                              recipientDisplayName={effectiveDisplayName}
+                              payoutsInUsd={true}
+                              stripeDefaultCurrency={'usd'}
+                              pageBlockId={block.id}
+                              fixedAmount={block.priceCents / 100}
+                              isWishlistItem={true}
+                            />
+                          )}
+                        </div>
+                        {!block.isUnlimited && (
+                          <div className="mt-3">
+                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+                              <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                            </div>
+                            <p className="text-right text-xs mt-1 text-gray-500 dark:text-gray-400">
+                              {purchasedCount} / {block.quantityGoal} funded
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
+                })
+              ) : (<p className="italic py-3 text-center text-gray-500 dark:text-gray-400">This user hasn't added any content yet.</p>)}
             </div>
           </div>
         </div>

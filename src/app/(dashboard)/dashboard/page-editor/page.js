@@ -1,0 +1,174 @@
+'use client';
+
+import { useState, useEffect, useTransition } from 'react';
+import { getPageBlocks, savePageBlocks } from '@/app/actions'; 
+import { PlusIcon, TrashIcon, LinkIcon, GiftIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+
+// Sub-component for editing a LINK block
+function LinkEditor({ block, onUpdate, onRemove }) {
+    return (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center text-gray-500 dark:text-gray-400">
+                    <Bars3Icon className="h-5 w-5 mr-2 cursor-grab" />
+                    <label className="font-semibold text-gray-700 dark:text-gray-300">Link</label>
+                </div>
+                <button type="button" onClick={onRemove} className="text-xs text-gray-500 hover:text-red-500 flex items-center"><TrashIcon className="h-4 w-4 mr-1" />Remove</button>
+            </div>
+            <div className="flex flex-col md:flex-row gap-4">
+                <input type="text" value={block.title || ''} onChange={(e) => onUpdate('title', e.target.value)} placeholder="Title (e.g., My Website)" className="flex-grow w-full md:w-1/3 px-3 py-2 border rounded-md" />
+                <input type="text" value={block.url || ''} onChange={(e) => onUpdate('url', e.target.value)} placeholder="URL (e.g., https://example.com)" className="flex-grow w-full md:w-2/3 px-3 py-2 border rounded-md" />
+            </div>
+        </div>
+    );
+}
+
+// Sub-component for editing a WISHLIST block
+function WishlistEditor({ block, onUpdate, onRemove }) {
+    const priceDollars = (block.priceCents / 100).toFixed(2);
+    
+    const handlePriceChange = (value) => {
+        const priceNum = parseFloat(value);
+        if (!isNaN(priceNum)) {
+            onUpdate('priceCents', Math.round(priceNum * 100));
+        }
+    };
+    
+    return (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center text-gray-500 dark:text-gray-400">
+                    <Bars3Icon className="h-5 w-5 mr-2 cursor-grab" />
+                    <label className="font-semibold text-gray-700 dark:text-gray-300">Wishlist Item</label>
+                </div>
+                <button type="button" onClick={onRemove} className="text-xs text-gray-500 hover:text-red-500 flex items-center"><TrashIcon className="h-4 w-4 mr-1" />Remove</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" value={block.title || ''} onChange={(e) => onUpdate('title', e.target.value)} placeholder="Item Name (e.g., New Microphone)" className="px-3 py-2 border rounded-md" />
+                <input type="number" step="0.01" value={priceDollars} onChange={(e) => handlePriceChange(e.target.value)} placeholder="Price" className="px-3 py-2 border rounded-md" />
+                <div className="md:col-span-2 flex items-center gap-4">
+                    <input type="number" value={block.quantityGoal || '1'} onChange={(e) => onUpdate('quantityGoal', parseInt(e.target.value))} disabled={block.isUnlimited} className="w-24 px-3 py-2 border rounded-md disabled:opacity-50" />
+                    <div className="flex items-center">
+                        <input id={`unlimited-${block.id}`} type="checkbox" checked={block.isUnlimited} onChange={(e) => onUpdate('isUnlimited', e.target.checked)} className="h-4 w-4 text-blue-600 border-gray-300 rounded" />
+                        <label htmlFor={`unlimited-${block.id}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-300">Unlimited</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function PageEditor() {
+    const [blocks, setBlocks] = useState([]);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
+    const [isPending, startTransition] = useTransition();
+    const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+
+    useEffect(() => {
+        startTransition(async () => {
+            const result = await getPageBlocks(); 
+            if (result.success) {
+                // Add a temporary client-side ID for drag-and-drop keying
+                const blocksWithClientIds = result.data.map(b => ({ ...b, clientId: Date.now() + Math.random() }));
+                setBlocks(blocksWithClientIds);
+            } else {
+                setError(result.message || "Failed to load page content.");
+            }
+            setIsLoadingInitial(false);
+        });
+    }, []);
+
+    const addBlock = (type) => {
+        let newBlock;
+        if (type === 'LINK') {
+            newBlock = { clientId: Date.now(), type: 'LINK', title: '', url: '' };
+        } else if (type === 'WISHLIST') {
+            newBlock = { clientId: Date.now(), type: 'WISHLIST', title: '', priceCents: 500, quantityGoal: 10, isUnlimited: false };
+        }
+        setBlocks([...blocks, newBlock]);
+    };
+
+    const updateBlock = (clientId, field, value) => {
+        setBlocks(blocks.map(b => b.clientId === clientId ? { ...b, [field]: value } : b));
+    };
+
+    const removeBlock = (clientId) => {
+        setBlocks(blocks.filter(b => b.clientId !== clientId));
+    };
+    
+    const onDragEnd = (result) => {
+        if (!result.destination) return;
+        const items = Array.from(blocks);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        setBlocks(items);
+    };
+
+    const handleSaveChanges = async () => {
+        setError(null); setSuccess(null);
+        startTransition(async () => {
+            const result = await savePageBlocks(blocks); 
+            if (result.success) {
+                setSuccess(result.message);
+            } else {
+                setError(result.message);
+            }
+        });
+    };
+
+    if (isLoadingInitial) {
+        return <p className="text-center p-10">Loading your page content...</p>;
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold">Page Editor</h1>
+                    <p className="text-gray-500">Add, edit, and reorder content for your public page.</p>
+                </div>
+                <button onClick={handleSaveChanges} disabled={isPending} className="bg-blue-600 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-700 disabled:opacity-50">
+                    {isPending ? "Saving..." : "Save Changes"}
+                </button>
+            </div>
+
+            {error && <p className="mb-4 p-3 bg-red-100 text-red-600 rounded-md">{error}</p>}
+            {success && <p className="mb-4 p-3 bg-green-100 text-green-600 rounded-md">{success}</p>}
+            
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="blocks">
+                    {(provided) => (
+                        <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6">
+                            {blocks.map((block, index) => (
+                                <Draggable key={block.clientId} draggableId={block.clientId.toString()} index={index}>
+                                    {(provided) => (
+                                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                            {block.type === 'LINK' && (
+                                                <LinkEditor block={block} onUpdate={(f, v) => updateBlock(block.clientId, f, v)} onRemove={() => removeBlock(block.clientId)} />
+                                            )}
+                                            {block.type === 'WISHLIST' && (
+                                                <WishlistEditor block={block} onUpdate={(f, v) => updateBlock(block.clientId, f, v)} onRemove={() => removeBlock(block.clientId)} />
+                                            )}
+                                        </div>
+                                    )}
+                                </Draggable>
+                            ))}
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
+            
+            <div className="mt-8 flex items-center justify-center gap-4">
+                <button onClick={() => addBlock('LINK')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md">
+                    <LinkIcon className="h-5 w-5" /> Add Link
+                </button>
+                <button onClick={() => addBlock('WISHLIST')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md">
+                    <GiftIcon className="h-5 w-5" /> Add Wishlist Item
+                </button>
+            </div>
+        </div>
+    );
+}

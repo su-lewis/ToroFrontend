@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import PublicProfileClient from '@/components/PublicProfileClient';
 
-// Data fetching function (remains a server-side utility)
+// This server-side function fetches all the necessary data for the profile page.
 async function getPublicProfileData(username) {
   if (typeof username !== 'string' || !username) return null;
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -11,12 +11,11 @@ async function getPublicProfileData(username) {
   }
   const apiUrl = `${apiBaseUrl}/public/profile/${username}`;
   try {
-    // Using 'no-store' ensures the data is always fresh, which is good for profiles.
-    const res = await fetch(apiUrl, { cache: 'no-store' });
+    const res = await fetch(apiUrl, { cache: 'no-store' }); // Use no-store to always get the latest page layout
     if (!res.ok) return null;
     return await res.json();
   } catch (error) {
-    console.error(`CATCH in getPublicProfileData for ${username}:`, error.message);
+    console.error(`Error fetching public profile for ${username}:`, error.message);
     return null;
   }
 }
@@ -73,17 +72,17 @@ export async function generateMetadata({ params }) {
 }
 
 
-// This is the main Page Server Component
+// This Server Component now ONLY fetches data and passes it to the client.
 export default async function PublicProfilePage({ params, searchParams }) {
   const username = params.username;
   const profileData = await getPublicProfileData(username);
   const paymentCancelled = searchParams?.payment_cancelled === 'true';
 
   if (!profileData) {
-    notFound(); // Triggers the not-found page
+    notFound();
   }
 
-  // The Server Component's only job is to fetch data and pass it to the Client Component
+  // Pass the fetched data to the Client Component for rendering.
   return (
     <PublicProfileClient
       profileData={profileData}

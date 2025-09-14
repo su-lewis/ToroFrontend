@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link'; // <-- Import the Link component
 import { createCheckoutSession } from '@/app/actions';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -11,15 +12,26 @@ const getCurrencySymbol = (currencyCode = 'usd') => {
     return symbols[currencyCode.toLowerCase()] || '$';
 };
 
-export default function SendTipButton({ recipientUsername, recipientDisplayName, payoutsInUsd, stripeDefaultCurrency }) {
+export default function SendTipButton({ 
+  recipientUsername, 
+  recipientDisplayName, 
+  payoutsInUsd, 
+  stripeDefaultCurrency, 
+  pageBlockId = null,
+  fixedAmount = null,
+  isWishlistItem = false 
+}) {
   
   const MINIMUM_TIP_AMOUNT = 1;
   const MAXIMUM_TIP_AMOUNT = 2500;
   
-  const [amount, setAmount] = useState(MINIMUM_TIP_AMOUNT.toString());
+  const [amount, setAmount] = useState(fixedAmount ? fixedAmount.toString() : ''); // Start with empty for placeholder
   const [donorName, setDonorName] = useState('');
   const [error, setError] = useState(null);
   const [isPending, startTransition] = useTransition();
+
+  // --- NEW STATE: Controls the expanded view ---
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const displayCurrency = payoutsInUsd ? 'usd' : (stripeDefaultCurrency || 'usd');
   const currencySymbol = getCurrencySymbol(displayCurrency);
@@ -37,26 +49,25 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
   const creatorAmountNumForDisplay = parseFloat(amount);
   const { total: totalDonorPaysNum, fee: platformFeeNum } = calculateTotalDonorPays(creatorAmountNumForDisplay);
 
-   const handlePayClick = () => {
+  const handlePayClick = () => {
     setError(null);
-    const creatorAmountNum = parseFloat(amount);
+    const finalAmount = amount === '' ? MINIMUM_TIP_AMOUNT : parseFloat(amount);
 
-    if (isNaN(creatorAmountNum) || creatorAmountNum < MINIMUM_TIP_AMOUNT || creatorAmountNum > MAXIMUM_TIP_AMOUNT) {
+    if (isNaN(finalAmount) || finalAmount < MINIMUM_TIP_AMOUNT || finalAmount > MAXIMUM_TIP_AMOUNT) {
       setError(`Amount must be between ${currencySymbol}${MINIMUM_TIP_AMOUNT} and ${currencySymbol}${MAXIMUM_TIP_AMOUNT}.`);
       return;
     }
     
     startTransition(async () => {
       const tipData = {
-        amount: creatorAmountNum,
+        amount: finalAmount,
         recipientUsername: recipientUsername,
         donorName: donorName || 'Anonymous',
+        pageBlockId: pageBlockId,
       };
       
       const result = await createCheckoutSession(tipData);
 
-      // --- THIS IS THE FIX ---
-      // Instead of calling Stripe.js, we now perform a direct redirect.
       if (result.success && result.url) {
         window.location.href = result.url;
       } else {
@@ -65,33 +76,27 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
     });
   };
 
+  // The small "Fund" button for wishlist items remains unchanged.
+  if (isWishlistItem) {
+    return (
+      <button
+        type="button"
+        onClick={handlePayClick}
+        disabled={isPending}
+        className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-sm shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {isPending ? '...' : 'Fund'}
+      </button>
+    )
+  }
+
+  // --- This is the new, interactive tip jar component ---
   return (
-    // This is now a simple div container, not a <form>
     <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-600">
-      <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100 text-center">
-        Send a Tip to {recipientDisplayName || recipientUsername}
-      </h3>
       
-      {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4 p-2 bg-red-100 dark:bg-red-900/30 rounded-md text-center">{error}</p>}
-      
-      <div className="flex items-center justify-center space-x-2 mb-4">
-        <span className="text-2xl font-medium text-gray-700 dark:text-gray-300">{currencySymbol}</span>
-        <input
-          type="text"
-          value={amount}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "" || (/^\d*\.?\d{0,2}$/.test(val) && parseFloat(val) <= MAXIMUM_TIP_AMOUNT)) {
-                setAmount(val);
-            }
-          }}
-          className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-2xl font-semibold text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm"
-          placeholder={MINIMUM_TIP_AMOUNT.toFixed(2)}
-        />
-      </div>
-      
-      {creatorAmountNumForDisplay > 0 && (
-        <div className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4 py-3">
+      {/* --- Fee display is now outside and above the form, and only shows when expanded --- */}
+      {isExpanded && creatorAmountNumForDisplay > 0 && (
+        <div className="text-sm text-gray-600 dark:text-gray-300 text-center mb-4 py-3 transition-opacity duration-300">
             <div className="flex justify-between items-center px-2">
                 <span>Platform & Stripe Fee:</span>
                  <span className="font-semibold">+ {currencySymbol}{platformFeeNum.toFixed(2)}</span>
@@ -103,25 +108,64 @@ export default function SendTipButton({ recipientUsername, recipientDisplayName,
         </div>
       )}
 
-      <div className="mb-4 flex flex-col items-center">
-        <input
-          value={donorName}
-          onChange={(e) => setDonorName(e.target.value)}
-          placeholder="Anonymous"
-          maxLength="18"
-          className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-lg text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm text-center"
-        />
-      </div>
+      {/* The main container for the interactive input and form */}
+      <div>
+        {/* --- The header is removed --- */}
+        
+        {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4 p-2 bg-red-100 dark:bg-red-900/30 rounded-md text-center">{error}</p>}
+        
+        {/* --- The new input box --- */}
+        <div className="relative flex items-center mb-4">
+          <span className="absolute left-3 text-2xl font-medium text-gray-500 dark:text-gray-400">{currencySymbol}</span>
+          <input
+            type="text"
+            value={amount}
+            onFocus={() => setIsExpanded(true)} // Expand the form on focus
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "" || (/^\d*\.?\d{0,2}$/.test(val) && parseFloat(val) <= MAXIMUM_TIP_AMOUNT)) {
+                  setAmount(val);
+              }
+            }}
+            placeholder="Enter tip amount"
+            className="w-full pl-8 pr-16 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-2xl font-semibold text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500"
+          />
+          <span className="absolute right-3 text-lg font-semibold text-gray-400 dark:text-gray-500">{displayCurrency.toUpperCase()}</span>
+        </div>
+        
+        {/* --- The expandable section --- */}
+        <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96' : 'max-h-0'}`}>
+          <div className="pt-4 space-y-4">
+            <div className="flex flex-col items-center">
+              <input
+                value={donorName}
+                onChange={(e) => setDonorName(e.target.value)}
+                placeholder="Your name (optional)"
+                maxLength="25"
+                className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-lg text-black dark:text-gray-300 bg-white dark:bg-gray-700 shadow-sm text-center"
+              />
+            </div>
 
-      <button
-        type="button" // Use type="button" to prevent default form submission
-        onClick={handlePayClick} // Call our handler on click
-        disabled={isPending || isNaN(creatorAmountNumForDisplay) || creatorAmountNumForDisplay < MINIMUM_TIP_AMOUNT}
-        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
-      >
-         {isPending ? 'Processing...' : `Pay ${currencySymbol}${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : '...'}`}
-      </button>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">Powered by Stripe</p>
+            <button
+              type="button"
+              onClick={handlePayClick}
+              disabled={isPending || isNaN(creatorAmountNumForDisplay) || creatorAmountNumForDisplay < MINIMUM_TIP_AMOUNT}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+            >
+              {isPending ? 'Processing...' : `Pay ${currencySymbol}${totalDonorPaysNum > 0 ? totalDonorPaysNum.toFixed(2) : MINIMUM_TIP_AMOUNT.toFixed(2)}`}
+            </button>
+          </div>
+        </div>
+
+        {/* --- The updated footer text --- */}
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+          By sending a tip, you agree to our{' '}
+          <Link href="/terms-of-service" target="_blank" className="hover:underline font-medium">
+            Terms of Service
+          </Link>
+          . Powered by Stripe.
+        </p>
+      </div>
     </div>
   );
 }
