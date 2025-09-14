@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { getUserSettings } from '@/app/actions';
 import { 
     UserCircleIcon, 
-    LinkIcon as LinkIconOutline, 
+    PencilSquareIcon, // Replaced LinkIconOutline with this
     Cog6ToothIcon, 
     ChartBarIcon, 
     ShareIcon, 
@@ -20,13 +20,10 @@ export default function DashboardOverviewPage() {
 
   useEffect(() => {
     async function getAppUserProfileDataForOverview() {
-      // Use the server action to fetch data on the client
       const result = await getUserSettings();
-      
       if (result.success) {
         setUserProfile(result.data);
       } else {
-        // Handle cases where the profile might not be found (404) vs. a real server error
         if (result.status !== 404 && result.status !== 401) {
           setError(result.message || "Error loading dashboard data.");
         }
@@ -38,11 +35,9 @@ export default function DashboardOverviewPage() {
 
   const handleCopyLink = () => {
     if (!userProfile?.username) return;
-    // Construct the full URL using the browser's window object
     const url = `${window.location.origin}/${userProfile.username}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
-    // Reset the "Copied" state after 2 seconds for better user feedback
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -86,29 +81,29 @@ export default function DashboardOverviewPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm md:text-base">View and share your page.</p>
               <div className="flex items-center space-x-2">
                 <Link href={`/${userProfile.username}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-5 rounded-lg text-sm">View Page</Link>
-                <button 
-                  onClick={handleCopyLink} 
-                  className="p-2.5 bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                  aria-label="Copy profile link"
-                >
+                <button onClick={handleCopyLink} className="p-2.5 bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors" aria-label="Copy profile link">
                   {copied ? <CheckIcon className="h-5 w-5 text-green-500" /> : <ShareIcon className="h-5 w-5 text-gray-700 dark:text-gray-200" />}
                 </button>
               </div>
             </>
           ) : (<p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">Set username in profile to activate.</p>)}
         </div>
+
+        {/* --- THIS IS THE UPDATED CARD --- */}
         <div className="group p-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-          <LinkIconOutline className="h-10 w-10 text-green-500 dark:text-green-400 mb-3" />
-          <h2 className="text-xl md:text-2xl font-semibold mb-2 text-gray-700 dark:text-gray-200 group-hover:text-green-600 dark:group-hover:text-green-400">Manage Links</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm md:text-base">Add or edit your links.</p>
-          <Link href="/dashboard/links" className="inline-block bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 px-5 rounded-lg text-sm">Go to Links</Link>
+          <PencilSquareIcon className="h-10 w-10 text-green-500 dark:text-green-400 mb-3" />
+          <h2 className="text-xl md:text-2xl font-semibold mb-2 text-gray-700 dark:text-gray-200 group-hover:text-green-600 dark:group-hover:text-green-400">Page Editor</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm md:text-base">Add or edit your links, wishlist, and other content.</p>
+          <Link href="/dashboard/page-editor" className="inline-block bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 px-5 rounded-lg text-sm">Go to Editor</Link>
         </div>
+
         <div className="group p-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl shadow-md hover:shadow-lg transition-shadow">
           <Cog6ToothIcon className="h-10 w-10 text-indigo-500 dark:text-indigo-400 mb-3" />
           <h2 className="text-xl md:text-2xl font-semibold mb-2 text-gray-700 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Edit Profile</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm md:text-base">Update your profile details.</p>
           <Link href="/dashboard/profile" className="inline-block bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2.5 px-5 rounded-lg text-sm">Go to Profile</Link>
         </div>
+
         <div className="group p-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl shadow-md hover:shadow-lg transition-shadow">
           <ChartBarIcon className="h-10 w-10 text-purple-500 dark:text-purple-400 mb-3" />
           <h2 className="text-xl md:text-2xl font-semibold mb-2 text-gray-700 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400">Payments</h2>
