@@ -32,18 +32,40 @@ export default function ProfileForm({ initialData: profile, serverError }) {
     setError('');
   };
   
-  const uploadFile = async (file, type) => {
+   const uploadFile = async (file, type) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Authentication required for upload.");
     const userId = session.user.id;
 
-    // Sanitize the filename to remove any characters that are not letters, numbers, underscores, dots, or hyphens.
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
-    const filePath = `${userId}/${type}/${Date.now()}_${cleanFileName}`;
+    // --- THIS IS THE FIX (Part 1) ---
+    // Create a consistent, predictable file path instead of a random one.
+    const fileExt = file.name.split('.').pop();
+    // The path will now always be the same for a user's avatar or banner.
+    const filePath = `${userId}/${type}.${fileExt}`;
 
-    const { data, error } = await supabase.storage.from('avatars').upload(filePath, file);
-    if (error) throw new Error(`Upload failed: ${error.message}`);
-    return supabase.storage.from('avatars').getPublicUrl(data.path).data.publicUrl;
+    // --- THIS IS THE FIX (Part 2) ---
+    // Use the `update` method with the `upsert: true` option.
+    // `upsert: true` means: if the file exists, update it. If it doesn't exist, create it.
+    // This handles both the first upload and all subsequent updates in a single, clean command.
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, {
+        cacheControl: '3600', // Optional: tell browsers to cache the image for an hour
+        upsert: true, // This is the key!
+      });
+      
+    if (error) {
+      console.error("Upload failed for path:", filePath);
+      throw new Error(`Upload failed: ${error.message}`);
+    }
+
+    // Since the path might be updated with a new timestamp by Supabase CDN,
+    // we need to construct the public URL manually with a cache-busting query parameter.
+    const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    // Add a timestamp to the URL to break the browser/CDN cache and show the new image instantly.
+    const cacheBusterUrl = `${publicUrlData.publicUrl}?t=${new Date().getTime()}`;
+    
+    return cacheBusterUrl;
   };
 
   async function handleSubmit(event) {
