@@ -6,49 +6,49 @@ import Link from 'next/link';
 export default function CookieConsentBanner() {
   const [showBanner, setShowBanner] = useState(false);
 
-  // When the component mounts on the client, check if consent has been given.
   useEffect(() => {
     const consent = localStorage.getItem('cookie_consent');
-    // Only show the banner if consent has NOT been given.
     if (consent !== 'true') {
       setShowBanner(true);
     }
   }, []);
 
   const handleConsent = () => {
-    // When the user clicks either button, save their choice and hide the banner.
     localStorage.setItem('cookie_consent', 'true');
     setShowBanner(false);
   };
 
-  // If the banner shouldn't be shown, render nothing.
   if (!showBanner) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-800 text-white p-4 shadow-lg z-50">
-      <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <p className="text-sm text-gray-300 text-center md:text-left">
-          We use essential cookies to ensure the proper functioning of our website. By continuing to use this site, you agree to our use of these cookies. Please review our{' '}
-          <Link href="/privacy-policy" className="font-semibold text-blue-400 hover:underline">
-            Privacy Policy
-          </Link>
-          {' '}for more details.
-        </p>
-        <div className="flex-shrink-0 flex gap-4">
-          <button
-            onClick={handleConsent}
-            className="px-4 py-2 text-sm font-medium bg-gray-600 hover:bg-gray-500 rounded-md transition-colors"
-          >
-            Decline
-          </button>
-          <button
-            onClick={handleConsent}
-            className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-          >
-            Accept
-          </button>
+    // --- THIS IS THE FIX ---
+    // We change the positioning and add classes for margin, rounded corners, and shadows.
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 max-w-lg z-50">
+      <div className="bg-gray-800 text-white p-6 rounded-lg shadow-xl border border-gray-700">
+        <div className="flex flex-col items-start gap-4">
+          <p className="text-sm text-gray-300">
+            We use essential cookies to ensure our site functions correctly. By using the site, you acknowledge our use of these cookies. Please review our{' '}
+            <Link href="/privacy-policy" className="font-semibold text-blue-400 hover:underline">
+              Privacy Policy
+            </Link>
+            {' '}for more details.
+          </p>
+          <div className="flex w-full sm:w-auto gap-4">
+            <button
+              onClick={handleConsent}
+              className="flex-1 px-4 py-2 text-sm font-medium bg-gray-600 hover:bg-gray-500 rounded-md transition-colors"
+            >
+              Decline
+            </button>
+            <button
+              onClick={handleConsent}
+              className="flex-1 px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              Accept
+            </button>
+          </div>
         </div>
       </div>
     </div>
