@@ -1,6 +1,7 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { AppThemeProvider } from '@/components/ThemeProvider';
+import CookieConsentBanner from '@/components/CookieConsentBanner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,10 +18,8 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className}`}>
         <AppThemeProvider>
-          {/* --- THE FIX --- */}
-          {/* We REMOVE the <main> wrapper entirely from the layout. */}
-          {/* Each page will now be responsible for its own root layout element. */}
           {children}
+          <CookieConsentBanner />
         </AppThemeProvider>
       </body>
     </html>

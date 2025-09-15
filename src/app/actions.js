@@ -319,16 +319,36 @@ export async function getUnifiedHistory() {
     }
 }
 
-// --- NEW ACTION FOR IMAGE AUTO-SAVE ---
+// --- UPDATED ACTION FOR IMAGE AUTO-SAVE & REMOVAL ---
 export async function updateProfileImages({ profileImageUrl, bannerImageUrl }) {
   try {
     const dataToUpdate = {};
+    // Check for `undefined` to ignore fields that weren't sent.
+    // An empty string '' will be saved as `null` by the backend.
     if (profileImageUrl !== undefined) dataToUpdate.profileImageUrl = profileImageUrl;
     if (bannerImageUrl !== undefined) dataToUpdate.bannerImageUrl = bannerImageUrl;
 
     if (Object.keys(dataToUpdate).length === 0) {
-      return { success: true }; // Nothing to update
+      return { success: true };
     }
+
+    const updatedProfile = await fetchProtectedDataFromServer('/users/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataToUpdate),
+    });
+
+    revalidatePath('/dashboard/profile');
+    if (updatedProfile.username) {
+      revalidatePath(`/${updatedProfile.username}`);
+    }
+
+    return { success: true, message: 'Image updated!', data: updatedProfile };
+  } catch (error) {
+    console.error("Error in updateProfileImages action:", error);
+    return { success: false, message: error.bodyText || 'Failed to save image.' };
+  }
+}
 
     const updatedProfile = await fetchProtectedDataFromServer('/users/profile', {
       method: 'POST',
