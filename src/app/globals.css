@@ -17,10 +17,15 @@
 /* --- THIS IS THE FIX --- */
 html,
 body {
-  height: 100%;
-}
-
-body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+
+  /* --- ADD THIS LINE --- */
+  --profile-bg-color: #111827; /* A default fallback color */
 }
