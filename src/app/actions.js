@@ -319,17 +319,19 @@ export async function getUnifiedHistory() {
     }
 }
 
-// --- UPDATED ACTION FOR IMAGE AUTO-SAVE & REMOVAL ---
 export async function updateProfileImages({ profileImageUrl, bannerImageUrl }) {
   try {
     const dataToUpdate = {};
-    // Check for `undefined` to ignore fields that weren't sent.
-    // An empty string '' will be saved as `null` by the backend.
-    if (profileImageUrl !== undefined) dataToUpdate.profileImageUrl = profileImageUrl;
-    if (bannerImageUrl !== undefined) dataToUpdate.bannerImageUrl = bannerImageUrl;
+    if (profileImageUrl !== undefined) {
+      dataToUpdate.profileImageUrl = profileImageUrl;
+    }
+    if (bannerImageUrl !== undefined) {
+      dataToUpdate.bannerImageUrl = bannerImageUrl;
+    }
 
     if (Object.keys(dataToUpdate).length === 0) {
-      return { success: true };
+      // If there's nothing to update, just return success.
+      return { success: true, data: null };
     }
 
     const updatedProfile = await fetchProtectedDataFromServer('/users/profile', {
@@ -339,25 +341,7 @@ export async function updateProfileImages({ profileImageUrl, bannerImageUrl }) {
     });
 
     revalidatePath('/dashboard/profile');
-    if (updatedProfile.username) {
-      revalidatePath(`/${updatedProfile.username}`);
-    }
-
-    return { success: true, message: 'Image updated!', data: updatedProfile };
-  } catch (error) {
-    console.error("Error in updateProfileImages action:", error);
-    return { success: false, message: error.bodyText || 'Failed to save image.' };
-  }
-}
-
-    const updatedProfile = await fetchProtectedDataFromServer('/users/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dataToUpdate),
-    });
-
-    revalidatePath('/dashboard/profile');
-    if (updatedProfile.username) {
+    if (updatedProfile && updatedProfile.username) {
       revalidatePath(`/${updatedProfile.username}`);
     }
 
