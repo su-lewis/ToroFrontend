@@ -1,3 +1,4 @@
+//frontend/src/app/%28dashboard%29/dashboard/page-editor/page.js
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';

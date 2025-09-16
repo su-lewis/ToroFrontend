@@ -1,3 +1,4 @@
+// frontend/src/app/%28dashboard%29/dashboard/layout.js
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';

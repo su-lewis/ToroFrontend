@@ -1,3 +1,4 @@
+// frontend/src/app/%28dashboard%29/dashboard/support/page.js
 import FaqItem from '@/components/FaqItem';
 
 // A list of your questions and answers

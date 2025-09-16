@@ -1,3 +1,4 @@
+// frontend/src/app/%28legal%29/privacy-policy/page.js
 export const metadata = {
   title: 'Privacy Policy',
 };

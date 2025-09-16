@@ -1,3 +1,4 @@
+// frontend/src/app/layout.js
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { AppThemeProvider } from '@/components/ThemeProvider';

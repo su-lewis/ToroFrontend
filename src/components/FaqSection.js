@@ -1,3 +1,4 @@
+// frontend/src/components/FaqSection.js
 import FaqItem from '@/components/FaqItem';
 
 // A curated list of the most important questions for new users.

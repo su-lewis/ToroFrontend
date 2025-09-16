@@ -1,3 +1,4 @@
+// frontend/src/app/%28legal%29/terms-of-service/page.js
 import Link from 'next/link';
 
 export const metadata = {

@@ -1,3 +1,4 @@
+// frontend/src/components/DashboardSidebar.js
 'use client';
 
 import { useState } from 'react';

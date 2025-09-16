@@ -1,3 +1,4 @@
+// frontend/src/components/LoginForm.js
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -62,8 +63,6 @@ export default function LoginForm() {
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
             Tribute
           </span>
-          {/* --- THIS IS THE FIX --- */}
-          {/* Add an explicit space between the two spans */}
           {' '}
           <span className="dark:text-white text-gray-800">
             Toro

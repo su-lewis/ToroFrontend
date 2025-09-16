@@ -1,3 +1,4 @@
+// frontend/src/app/%28dashboard%29/dashboard/profile/page.js
 import { fetchProtectedDataFromServer } from '@/lib/server-api';
 import ProfileForm from '@/components/ProfileForm'; // This path is now correct
 

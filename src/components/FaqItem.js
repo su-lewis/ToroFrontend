@@ -1,3 +1,4 @@
+// frontend/src/components/FaqItem.js
 'use client';
 
 import { useState } from 'react';

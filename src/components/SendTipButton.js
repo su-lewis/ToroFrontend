@@ -1,3 +1,4 @@
+// frontend/src/components/SendTipButton.js
 'use client';
 
 import { useState, useTransition } from 'react';

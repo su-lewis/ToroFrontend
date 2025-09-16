@@ -1,3 +1,4 @@
+// frontend/src/app/[username]/page.js
 import { notFound } from 'next/navigation';
 import PublicProfileClient from '@/components/PublicProfileClient';
 

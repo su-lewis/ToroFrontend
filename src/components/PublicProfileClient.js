@@ -1,3 +1,4 @@
+// frontend/src/components/PublicProfileClient.js
 'use client';
 
 import Image from 'next/image';
