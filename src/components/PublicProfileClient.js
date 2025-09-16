@@ -11,11 +11,27 @@ const DEFAULT_DARK_BG = '#111827';
 const DEFAULT_LIGHT_BG = '#F9FAFB';
 const OLD_DEFAULT_BG = '#FFFFFF';
 
+// --- NEW HELPER FUNCTION ---
+// This function determines if a given hex color is light or dark.
+// It returns `true` for light colors and `false` for dark colors.
+const isColorLight = (hexColor) => {
+  if (!hexColor) return false;
+  // Remove the '#' if it's there
+  const color = hexColor.charAt(0) === '#' ? hexColor.slice(1) : hexColor;
+  // Convert hex to RGB
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+  // Calculate luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+  // Return true if the color is light, false if it's dark
+  return luminance > 140; 
+};
+
 export default function PublicProfileClient({ profileData, paymentCancelled }) {
   const { resolvedTheme } = useTheme();
   const [showCancelledMessage, setShowCancelledMessage] = useState(paymentCancelled);
 
-  // Destructure with default empty array for pageBlocks
   const {
     displayName,
     username,
@@ -28,7 +44,7 @@ export default function PublicProfileClient({ profileData, paymentCancelled }) {
     profileBackgroundColor,
     payoutsInUsd,
     stripeDefaultCurrency,
-  } = profileData;
+    } = profileData;
 
   const effectiveDisplayName = displayName || username;
 
@@ -56,13 +72,32 @@ export default function PublicProfileClient({ profileData, paymentCancelled }) {
         }, 5000); // Hide message after 5 seconds
         return () => clearTimeout(timer);
     }
-  }, [paymentCancelled]);
+   }, [paymentCancelled]);
+  
+  // --- NEW: Determine the correct text color for placeholders ---
+  const placeholderTextColorClass = isColorLight(finalBackgroundColor) 
+    ? 'text-gray-800' 
+    : 'text-gray-200';
 
   return (
     <main style={pageStyle} className="min-h-screen transition-colors duration-500">
       <div className="container mx-auto max-w-3xl flex flex-col items-center pb-12">
-        <div className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg" style={{ backgroundColor: '#D1D5DB' }}>
-          {bannerImageUrl && <Image src={bannerImageUrl} alt={`${effectiveDisplayName}'s banner`} layout="fill" className="object-cover" priority={true} />}
+        
+        {/* --- FIX #1: BANNER PLACEHOLDER --- */}
+        <div 
+          className="w-full h-48 md:h-64 lg:h-72 relative shadow-lg flex items-center justify-center"
+          // It now uses the selected background color
+          style={{ backgroundColor: finalBackgroundColor }}
+        >
+          {bannerImageUrl ? (
+            <Image src={bannerImageUrl} alt={`${effectiveDisplayName}'s banner`} layout="fill" className="object-cover" priority={true} />
+          ) : (
+            // --- FIX #2: READABLE TEXT ---
+            // The text color now adapts based on the background brightness
+            <span className={`text-lg font-medium opacity-50 ${placeholderTextColorClass}`}>
+              No banner
+            </span>
+          )}
           <div className="absolute top-4 right-4 z-10">
             <ThemeSwitcher />
           </div>
@@ -74,7 +109,12 @@ export default function PublicProfileClient({ profileData, paymentCancelled }) {
               {profileImageUrl ? (
                 <Image src={profileImageUrl} alt={effectiveDisplayName} layout="fill" className="object-cover" />
               ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-6xl font-bold">
+                // --- FIX #3: AVATAR PLACEHOLDER ---
+                <div 
+                  className="w-full h-full flex items-center justify-center text-6xl font-bold"
+                  // It also uses the selected background color and adapts its text color
+                  style={{ backgroundColor: finalBackgroundColor, color: isColorLight(finalBackgroundColor) ? '#374151' : '#FFFFFF' }}
+                >
                   {effectiveDisplayName.charAt(0).toUpperCase()}
                 </div>
               )}
