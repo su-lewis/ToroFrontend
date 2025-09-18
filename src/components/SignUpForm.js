@@ -1,9 +1,11 @@
 // frontend/src/components/SignUpForm.js
+
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
+import SocialLogins from '@/components/SocialLogins'; // <-- IMPORT THE COMPONENT
 
 export default function SignUpForm() {
   const [email, setEmail] = useState('');
@@ -42,8 +44,22 @@ export default function SignUpForm() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-gray-100 dark:bg-gray-900">
+      
+      {/* --- CHANGE #1: ADDED LOGO --- */}
+      <div className="mb-10 text-center">
+        <h1 className="text-5xl md:text-6xl font-extrabold">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+            Tribute
+          </span>
+          {' '}
+          <span className="dark:text-white text-gray-800">
+            Toro
+          </span>
+        </h1>
+      </div>
+
       <div className="p-8 bg-white dark:bg-gray-800 shadow-xl rounded-lg w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">Create Your TributeToro Account</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">Create Your Account</h1>
         {error && <p className="text-red-500 dark:text-red-400 mb-4 p-3 bg-red-100 dark:bg-red-900/30 rounded text-sm">{error}</p>}
         {message && <p className="text-green-600 dark:text-green-400 mb-4 p-3 bg-green-100 dark:bg-green-900/30 rounded text-sm">{message}</p>}
         <form onSubmit={handleSignUp} className="space-y-6">
@@ -59,6 +75,10 @@ export default function SignUpForm() {
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
+
+        {/* --- CHANGE #2: ADDED SOCIAL LOGINS --- */}
+        <SocialLogins />
+
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{' '}
           <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">

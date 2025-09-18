@@ -1,4 +1,5 @@
 // frontend/src/components/LoginForm.js
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -6,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { sendPasswordReset } from '@/app/actions';
 import Link from 'next/link';
+import SocialLogins from '@/components/SocialLogins'; // <-- IMPORT THE COMPONENT
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -123,6 +125,9 @@ export default function LoginForm() {
             {loading ? 'Logging In...' : 'Log In'}
           </button>
         </form>
+
+        {/* --- THIS IS THE CHANGE --- */}
+        <SocialLogins />
         
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account?{' '}

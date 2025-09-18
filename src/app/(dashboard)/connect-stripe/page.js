@@ -1,3 +1,4 @@
+// frontend/src/app/%28dashboard%29/connect-stripe/page.js
 'use client';
 
 import { useState, useEffect, Suspense, useTransition } from 'react';
