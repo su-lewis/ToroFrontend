@@ -1,8 +1,9 @@
 // frontend/src/components/SocialLogins.js
+
 'use client';
 
 import { supabase } from '@/lib/supabaseClient';
-import { FaGoogle } from 'react-icons/fa'; // A popular icon library
+import { FaGoogle } from 'react-icons/fa';
 
 export default function SocialLogins() {
 
@@ -10,7 +11,9 @@ export default function SocialLogins() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // This tells Google where to send the user back to after they log in.
+        // --- THIS IS THE FIX ---
+        // This line explicitly tells Supabase where to send the user back to
+        // within your Vercel application after they approve the Google login.
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
