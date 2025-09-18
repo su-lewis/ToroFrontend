@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { sendPasswordReset } from '@/app/actions';
 import Link from 'next/link';
-import SocialLogins from '@/components/SocialLogins'; // <-- IMPORT THE COMPONENT
+import SocialLogins from '@/components/SocialLogins';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -20,40 +20,48 @@ export default function LoginForm() {
   const router = useRouter();
 
   const handleLogin = async (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
+    
+    // --- THIS IS THE FIX ---
+    // The try/catch is now wrapped with a finally block.
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (signInError) throw signInError;
+      
       router.push('/dashboard');
-      router.refresh(); 
+      router.refresh();
+      
     } catch (err) {
       setError(err.message || "Failed to log in. Please check your credentials.");
+    } finally {
+      // This will run after the try or catch block, guaranteeing the loading state is reset.
       setLoading(false);
     }
   };
 
   const handlePasswordReset = () => {
     if (!email) {
-        setError("Please enter your email address above to reset your password.");
-        return;
+      setError("Please enter your email address above to reset your password.");
+      return;
     }
-    setError(null); setSuccess(null);
+    setError(null);
+    setSuccess(null);
     const formData = new FormData();
     formData.append('email', email);
 
     startTransition(async () => {
-        const result = await sendPasswordReset(formData);
-        if (result.success) {
-            setSuccess(result.message);
-        } else {
-            setError(result.message);
-        }
+      const result = await sendPasswordReset(formData);
+      if (result.success) {
+        setSuccess(result.message);
+      } else {
+        setError(result.message);
+      }
     });
   };
 
@@ -126,7 +134,6 @@ export default function LoginForm() {
           </button>
         </form>
 
-        {/* --- THIS IS THE CHANGE --- */}
         <SocialLogins />
         
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
