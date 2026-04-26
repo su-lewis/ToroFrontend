@@ -1,6 +1,8 @@
 import { fetchProtectedDataFromServer } from '@/lib/server-api';
 import ProfileForm from '@/components/ProfileForm'; // This path is now correct
 
+export const runtime = 'edge';
+
 export default async function ProfilePageServer() {
   let initialProfileData = null; 
   let serverFetchError = null;

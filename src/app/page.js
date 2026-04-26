@@ -5,6 +5,8 @@ import Link from 'next/link';
 import FaqSection from '@/components/FaqSection';
 import Footer from '@/components/Footer';
 
+export const runtime = 'edge';
+
 export default async function HomePage() {
   const cookieStore = cookies();
   const supabase = createServerClient(

@@ -4,6 +4,8 @@ import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';
 import LoginForm from '@/components/LoginForm'; // Import the client component
 
+export const runtime = 'edge';
+
 export default async function LoginPageServerWrapper() {
   const cookieStore = cookies();
   const supabase = createServerClient(

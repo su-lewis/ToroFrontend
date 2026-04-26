@@ -1,6 +1,8 @@
 // frontend/src/app/(dashboard)/dashboard/account-settings/page.js
 'use client';
 
+export const runtime = 'edge';
+
 import { useState, useTransition, useRef } from 'react'; // Added useRef
 import { updateUserEmail, updateUserPassword } from '@/app/actions';
 

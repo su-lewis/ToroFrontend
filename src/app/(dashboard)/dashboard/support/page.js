@@ -1,5 +1,7 @@
 import FaqItem from '@/components/FaqItem';
 
+export const runtime = 'edge';
+
 // A list of your questions and answers
 const faqs = [
     {

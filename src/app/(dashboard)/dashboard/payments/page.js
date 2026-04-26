@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { useState, useEffect, useTransition } from 'react';
 import { 
     getPaymentStats, 

@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { useState, useEffect, useTransition } from 'react';
 import { getPageBlocks, savePageBlocks } from '@/app/actions'; 
 import { LinkIcon, GiftIcon, Bars3Icon, TrashIcon } from '@heroicons/react/24/outline';

@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import PublicProfileClient from '@/components/PublicProfileClient';
 
+export const runtime = 'edge';
+
 // This server-side function fetches all the necessary data for the profile page.
 async function getPublicProfileData(username) {
   if (typeof username !== 'string' || !username) return null;

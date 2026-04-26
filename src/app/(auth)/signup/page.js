@@ -4,6 +4,8 @@ import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';
 import SignUpForm from '@/components/SignUpForm';
 
+export const runtime = 'edge';
+
 export default async function SignUpPageServerWrapper() {
   const cookieStore = cookies();
   const supabase = createServerClient(
