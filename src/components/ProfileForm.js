@@ -130,7 +130,7 @@ export default function ProfileForm({ initialData: profile, serverError }) {
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-100 text-center">Edit Profile</h1>
 
       {error && <p className="text-red-500 dark:text-red-300 mb-4 p-3 bg-red-100 dark:bg-red-900/30 rounded text-sm text-center">{error}</p>}
-      {success && <p className="text-green-700 dark:text-green-300 mb-4 p-3 bg-green-100 dark:bg-green-900/30 rounded text-sm text-center">{success}</p>}
+      {success && <p className="text-emerald-700 dark:text-emerald-300 mb-4 p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded text-sm text-center">{success}</p>}
 
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
         <div>
