@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+This frontend is deployed to **Cloudflare Pages** and works with an Express backend hosted on **Oracle Cloud**. The project uses **Supabase** for authentication, database access, and storage.
+
 ## Getting Started
 
 First, run the development server:
