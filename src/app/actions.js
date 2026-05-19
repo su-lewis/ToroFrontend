@@ -163,7 +163,7 @@ export async function createStripeOnboardLink(formData) { // <-- It now accepts 
             return { success: false, message: 'Country selection is required.' };
         }
 
-        const response = await fetchProtectedDataFromServer('/stripe/connect/onboard-user', {
+        const response = await fetchProtectedDataFromServer('/stripe/onboard', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ country: country }), // <-- Pass the country in the body
